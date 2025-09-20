@@ -14,6 +14,10 @@ export const loginRoute: FastifyPluginAsyncZod = async (server) => {
           email: z.email(),
           password: z.string(),
         }),
+        response: {
+          200: z.object({ token: z.string() }),
+          400: z.object({ message: z.string() }),
+        },
       },
     },
     async (request, reply) => {
@@ -23,6 +27,7 @@ export const loginRoute: FastifyPluginAsyncZod = async (server) => {
         .select()
         .from(users)
         .where(eq(users.email, email));
+      console.log(result);
 
       if (result.length === 0) {
         return reply.status(400).send({ message: "Credenciais inválidas" });
@@ -36,7 +41,7 @@ export const loginRoute: FastifyPluginAsyncZod = async (server) => {
         return reply.status(400).send({ message: "Credenciais inválidas" });
       }
 
-      return reply.status(201).send({ message: "ok" });
+      return reply.status(200).send({ token: "ok" });
     }
   );
 };
