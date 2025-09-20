@@ -1,12 +1,12 @@
 import fastify from "fastify";
+import { loginRoute } from "./routes/login.ts";
+import { registerRoute } from "./routes/register.ts";
 
 import {
   validatorCompiler,
   serializerCompiler,
   type ZodTypeProvider,
 } from "fastify-type-provider-zod";
-import { loginRoute } from "./routes/login.ts";
-import { registerRoute } from "./routes/register.ts";
 
 const app = fastify().withTypeProvider<ZodTypeProvider>();
 

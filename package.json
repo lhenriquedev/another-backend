@@ -24,6 +24,7 @@
     "zod": "^4.1.9"
   },
   "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.5.2",
     "dotenv-cli": "^10.0.0",
     "drizzle-kit": "^0.31.4",

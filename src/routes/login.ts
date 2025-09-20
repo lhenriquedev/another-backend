@@ -1,9 +1,10 @@
-import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
+import jwt from "jsonwebtoken";
 import z from "zod";
-import { db } from "../database/client.ts";
-import { users } from "../database/schema.ts";
-import { eq } from "drizzle-orm";
 import { compare } from "bcryptjs";
+import { db } from "../database/client.ts";
+import { eq } from "drizzle-orm";
+import { users } from "../database/schema.ts";
+import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 
 export const loginRoute: FastifyPluginAsyncZod = async (server) => {
   server.post(
@@ -27,7 +28,6 @@ export const loginRoute: FastifyPluginAsyncZod = async (server) => {
         .select()
         .from(users)
         .where(eq(users.email, email));
-      console.log(result);
 
       if (result.length === 0) {
         return reply.status(400).send({ message: "Credenciais inválidas" });
@@ -41,7 +41,16 @@ export const loginRoute: FastifyPluginAsyncZod = async (server) => {
         return reply.status(400).send({ message: "Credenciais inválidas" });
       }
 
-      return reply.status(200).send({ token: "ok" });
+      if (!process.env.JWT_SECRET) {
+        throw new Error("JWT_SECRET must be set.");
+      }
+
+      const token = jwt.sign(
+        { sub: user.id, role: user.role },
+        process.env.JWT_SECRET
+      );
+
+      return reply.status(200).send({ token });
     }
   );
 };
