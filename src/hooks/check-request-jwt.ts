@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyReply, FastifyRequest } from "fastify";
 
 type JWTPayload = {
   sub: string;
