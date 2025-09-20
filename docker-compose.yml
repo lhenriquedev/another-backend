@@ -1,10 +1,9 @@
 services:
   db:
     image: postgres:17
-    container_name: postgres17
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
-      POSTGRES_DB: mydb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: another_backend
     ports:
       - "5432:5432"
