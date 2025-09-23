@@ -2,8 +2,10 @@ import z from "zod";
 import { db } from "../database/client.ts";
 import { eq } from "drizzle-orm";
 import { hash } from "bcryptjs";
-import { users } from "../database/schema.ts";
+import { emailConfirmations, users } from "../database/schema.ts";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
+import { generateNumericCode } from "../lib/verification.ts";
+import { resendVerificationEmail } from "../services/mail/resend.ts";
 
 export const registerRoute: FastifyPluginAsyncZod = async (server) => {
   server.post(
@@ -32,10 +34,20 @@ export const registerRoute: FastifyPluginAsyncZod = async (server) => {
 
       const passwordHash = await hash(password, 6);
 
-      await db
+      const [user] = await db
         .insert(users)
-        .values({ email, name, password: passwordHash, role })
+        .values({ email, name, password: passwordHash, role, isActive: false })
         .returning();
+
+      const code = generateNumericCode();
+
+      await db.insert(emailConfirmations).values({
+        userId: user.id,
+        code,
+        expiresAt: new Date(Date.now() + 1000 * 60 * 10), // 10 minutos,
+      });
+
+      await resendVerificationEmail({ code, email, name });
 
       return reply.status(201).send({ message: "Usuário criado com sucesso" });
     }

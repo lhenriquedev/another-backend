@@ -2,17 +2,24 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "display": "Node 22",
   "_version": "22.0.0",
-
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules"],
   "compilerOptions": {
-    "lib": ["es2024", "ESNext.Array", "ESNext.Collection", "ESNext.Iterator"],
-    "module": "nodenext",
-    "target": "es2022",
-    "allowImportingTsExtensions": true,
-    "noEmit": true,
-
-    "strict": true,
-    "esModuleInterop": true,
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
     "skipLibCheck": true,
-    "moduleResolution": "node16"
+    "strict": false,
+    "forceConsistentCasingInFileNames": true,
+    "strictNullChecks": true,
+    "noEmit": true,
+    "incremental": true,
+    "jsx": "react-jsx", // support JSX
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "target": "ES2017",
+    "allowImportingTsExtensions": true
   }
 }
