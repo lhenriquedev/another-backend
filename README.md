@@ -70,3 +70,46 @@ A aplicação espera uma variável de ambiente `DATABASE_URL`. O `docker-compose
 - Schema do database usa chaves primárias UUID com valores padrão aleatórios
 - Migrations do Drizzle são armazenadas no diretório `./drizzle`
 - Servidor roda na porta 3333 por padrão
+
+## Diagrama Relacional (ERD)
+```text
+BELTS (id PK, belt, required_classes, created_at)
+    ^
+    | beltId
+USERS (id PK, name, email, password, role, is_active, belt_id, created_at, updated_at)
+    ^
+    | userId
+EMAIL_CONFIRMATIONS (id PK, code_hash, expires_at, is_consumed, created_at)
+```
+- `users.beltId` referencia `belts.id` para determinar a graduação do aluno.
+- `email_confirmations.userId` referencia `users.id` e herda regras de cascade para manter o histórico limpo.
+
+## Diagrama Mermaid
+```mermaid
+sequenceDiagram
+    participant C as Cliente
+    participant API as Fastify API
+    participant DB as PostgreSQL
+    participant Mail as Resend
+
+    C->>API: POST /register
+    API->>DB: Inserir usuário inativo + código hash
+    API->>Mail: Enviar código de verificação
+    C->>API: POST /verify-account
+    API->>DB: Validar código ativo
+    API-->>C: Conta ativada
+    C->>API: POST /login
+    API->>DB: Validar credenciais
+    API-->>C: JWT com role
+    C->>API: GET /me
+    API->>DB: Consultar perfil
+    API-->>C: Dados do usuário
+```
+
+## Novas Funcionalidades
+- Cadastro envia códigos de verificação via Resend e mantém hashes no PostgreSQL com Drizzle.
+- Reenvio de código impede duplicatas ativas e reutiliza a expiração configurável de 10 minutos.
+- Verificação de conta consome códigos dentro de uma transação e libera o usuário (`isActive = true`).
+- Login valida credenciais com bcrypt, bloqueia contas inativas e retorna JWT assinado com role.
+- Rota `/me` usa middleware JWT, schemas Zod e handler de erros centralizado para respostas consistentes.
+

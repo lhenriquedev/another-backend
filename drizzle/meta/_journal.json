@@ -36,6 +36,20 @@
       "when": 1758735033602,
       "tag": "0004_pink_hellcat",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1758742619448,
+      "tag": "0005_melted_hiroim",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1758742797386,
+      "tag": "0006_gorgeous_mole_man",
+      "breakpoints": true
     }
   ]
 }
