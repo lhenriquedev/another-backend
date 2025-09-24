@@ -41,6 +41,12 @@ export const loginRoute: FastifyPluginAsyncZod = async (server) => {
         return reply.status(400).send({ message: "Credenciais inválidas" });
       }
 
+      if (!user.isActive) {
+        return reply
+          .status(400)
+          .send({ message: "Essa conta não está ativada" });
+      }
+
       if (!process.env.JWT_SECRET) {
         throw new Error("JWT_SECRET must be set.");
       }

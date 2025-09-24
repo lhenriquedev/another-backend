@@ -18,6 +18,10 @@ export const registerRoute: FastifyPluginAsyncZod = async (server) => {
           name: z.string(),
           role: z.enum(["admin", "student"]).default("student"),
         }),
+        response: {
+          201: z.object({ code: z.string() }),
+          400: z.object({ message: z.string() }),
+        },
       },
     },
     async (request, reply) => {
@@ -40,16 +44,17 @@ export const registerRoute: FastifyPluginAsyncZod = async (server) => {
         .returning();
 
       const code = generateNumericCode();
+      const codeHash = await hash(code, 6);
 
       await db.insert(emailConfirmations).values({
         userId: user.id,
-        code,
+        codeHash,
         expiresAt: new Date(Date.now() + 1000 * 60 * 10), // 10 minutos,
       });
 
       await resendVerificationEmail({ code, email, name });
 
-      return reply.status(201).send({ message: "Usuário criado com sucesso" });
+      return reply.status(201).send({ code });
     }
   );
 };

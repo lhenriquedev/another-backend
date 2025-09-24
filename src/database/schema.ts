@@ -25,8 +25,8 @@ export const emailConfirmations = pgTable("email_confirmations", {
   userId: uuid()
     .notNull()
     .references(() => users.id, { onDelete: "cascade", onUpdate: "cascade" }),
-  code: text().notNull(),
-  createdAt: timestamp().notNull().defaultNow(),
+  codeHash: text().notNull(),
   expiresAt: timestamp().notNull(),
-  confirmedAt: timestamp().defaultNow(),
+  isConsumed: boolean().default(false),
+  createdAt: timestamp().notNull().defaultNow(),
 });

@@ -8,6 +8,7 @@ import {
   type ZodTypeProvider,
 } from "fastify-type-provider-zod";
 import { profileRoute } from "./routes/profile.ts";
+import { verifyAccountRoute } from "./routes/verify-account.ts";
 
 const app = fastify().withTypeProvider<ZodTypeProvider>();
 
@@ -17,5 +18,6 @@ app.setSerializerCompiler(serializerCompiler);
 app.register(registerRoute);
 app.register(loginRoute);
 app.register(profileRoute);
+app.register(verifyAccountRoute);
 
 export { app };
