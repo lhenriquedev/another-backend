@@ -1,9 +1,9 @@
 import z from "zod";
-import { checkRequestJWT } from "../hooks/check-request-jwt.ts";
-import { db } from "../database/client.ts";
+import { checkRequestJWT } from "../../hooks/check-request-jwt.ts";
+import { db } from "../../database/client.ts";
 import { eq } from "drizzle-orm";
-import { getAuthenticatedUserFromRequest } from "../utils/get-authenticated-user-from-request.ts";
-import { users } from "../database/schema.ts";
+import { getAuthenticatedUserFromRequest } from "../../utils/get-authenticated-user-from-request.ts";
+import { users } from "../../database/schema.ts";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 
 export const profileRoute: FastifyPluginAsyncZod = async (server) => {

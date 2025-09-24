@@ -1,8 +1,8 @@
 import z from "zod";
 import { and, eq, gt } from "drizzle-orm";
 import { compare } from "bcryptjs";
-import { db } from "../database/client";
-import { emailConfirmations, users } from "../database/schema";
+import { db } from "../../database/client";
+import { emailConfirmations, users } from "../../database/schema";
 import { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 
 export const verifyAccountRoute: FastifyPluginAsyncZod = async (server) => {

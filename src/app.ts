@@ -1,9 +1,9 @@
 import fastify from "fastify";
-import { loginRoute } from "./routes/login.ts";
-import { profileRoute } from "./routes/profile.ts";
-import { registerRoute } from "./routes/register.ts";
-import { resendCodeRoute } from "./routes/resend-code.ts";
-import { verifyAccountRoute } from "./routes/verify-account.ts";
+import { loginRoute } from "./routes/auth/login.ts";
+import { profileRoute } from "./routes/auth/profile.ts";
+import { registerRoute } from "./routes/auth/register.ts";
+import { resendCodeRoute } from "./routes/auth/resend-code.ts";
+import { verifyAccountRoute } from "./routes/auth/verify-account.ts";
 
 import {
   validatorCompiler,

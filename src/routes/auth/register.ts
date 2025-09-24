@@ -1,10 +1,10 @@
 import z from "zod";
-import { db } from "../database/client.ts";
-import { emailConfirmations, users } from "../database/schema.ts";
+import { db } from "../../database/client.ts";
+import { emailConfirmations, users } from "../../database/schema.ts";
 import { eq } from "drizzle-orm";
-import { generateNumericCode } from "../lib/verification.ts";
+import { generateNumericCode } from "../../lib/verification.ts";
 import { hash } from "bcryptjs";
-import { resendVerificationEmail } from "../services/mail/resend.ts";
+import { resendVerificationEmail } from "../../services/mail/resend.ts";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 
 export const registerRoute: FastifyPluginAsyncZod = async (server) => {

@@ -2,11 +2,11 @@ import z from "zod";
 import { addMinutes } from "date-fns";
 import { and, eq, gt } from "drizzle-orm";
 import { compare, hash } from "bcryptjs";
-import { db } from "../database/client";
-import { emailConfirmations, users } from "../database/schema";
+import { db } from "../../database/client";
+import { emailConfirmations, users } from "../../database/schema";
 import { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
-import { generateNumericCode } from "../lib/verification";
-import { resendVerificationEmail } from "../services/mail/resend";
+import { generateNumericCode } from "../../lib/verification";
+import { resendVerificationEmail } from "../../services/mail/resend";
 
 export const resendCodeRoute: FastifyPluginAsyncZod = async (server) => {
   server.post(
