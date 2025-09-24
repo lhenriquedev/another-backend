@@ -47,12 +47,12 @@ export const verifyAccountRoute: FastifyPluginAsyncZod = async (server) => {
 
       const codeHash = await compare(code, verification.codeHash);
 
-      if (verification.expiresAt <= now) {
-        return reply.status(400).send({ message: "Código expirado" });
-      }
-
       if (!codeHash) {
         return reply.status(400).send({ message: "Código inválido" });
+      }
+
+      if (verification.expiresAt <= now) {
+        return reply.status(400).send({ message: "Código expirado" });
       }
 
       await db.transaction(async (tx) => {
