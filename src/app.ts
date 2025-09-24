@@ -10,6 +10,7 @@ import {
   serializerCompiler,
   type ZodTypeProvider,
 } from "fastify-type-provider-zod";
+import { ZodError } from "zod";
 
 const app = fastify().withTypeProvider<ZodTypeProvider>();
 
@@ -21,5 +22,21 @@ app.register(loginRoute);
 app.register(profileRoute);
 app.register(verifyAccountRoute);
 app.register(resendCodeRoute);
+
+app.setErrorHandler((error, _, reply) => {
+  if (error instanceof ZodError) {
+    return reply
+      .status(400)
+      .send({ message: "Validation error", issues: error.format() });
+  }
+
+  if (process.env.NODE_ENV !== "production") {
+    console.error(error);
+  } else {
+    // here we should log to a external tool like datadog, new relic or sentry
+  }
+
+  return reply.status(500).send({ message: "Internal server error" });
+});
 
 export { app };
