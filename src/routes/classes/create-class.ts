@@ -2,6 +2,8 @@ import z from "zod";
 import { classes } from "../../database/schema.ts";
 import { db } from "../../database/client.ts";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
+import { checkRequestJWT } from "../../hooks/check-request-jwt.ts";
+import { checkUserRole } from "../../hooks/check-user-role.ts";
 
 const dateRegex = /^\d{4}-\d{2}-\d{2}$/; // 2025-01-31
 const timeRegex = /^\d{2}:\d{2}(:\d{2})?$/; // 19:00 ou 19:00:00
@@ -12,6 +14,7 @@ export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
   server.post(
     "/create-class",
     {
+      preHandler: [checkRequestJWT, checkUserRole("admin")],
       schema: {
         body: z
           .object({
@@ -23,7 +26,7 @@ export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
             instructorId: z.uuid(),
             isRecurring: z.boolean().optional().default(false),
             recurrenceRule: z.string().optional(),
-            recurrenceEndDate: z.date().optional(),
+            recurrenceEndDate: z.string().optional(),
             capacity: z.coerce.number().default(10),
             status: z.enum([
               "finished",

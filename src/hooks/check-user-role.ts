@@ -1,7 +1,9 @@
 import { getAuthenticatedUserFromRequest } from "../utils/get-authenticated-user-from-request.ts";
 import type { FastifyRequest, FastifyReply } from "fastify";
 
-export function checkUserRole(role: "student" | "manager") {
+type Roles = "admin" | "student" | "instructor";
+
+export function checkUserRole(role: Roles) {
   return async function (request: FastifyRequest, reply: FastifyReply) {
     const user = getAuthenticatedUserFromRequest(request);
 

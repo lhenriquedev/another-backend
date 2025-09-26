@@ -79,7 +79,7 @@ export const classes = pgTable(
     instructorId: uuid().references(() => users.id),
     isRecurring: boolean().default(false),
     recurrenceRule: text(),
-    recurrenceEndDate: date(),
+    recurrenceEndDate: date({ mode: "string" }),
     capacity: integer(),
     status: statusRole().default("not-started"),
   },
