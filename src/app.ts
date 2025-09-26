@@ -11,6 +11,7 @@ import {
   type ZodTypeProvider,
 } from "fastify-type-provider-zod";
 import { ZodError } from "zod";
+import { createClassRoute } from "./routes/classes/create-class.ts";
 
 const app = fastify().withTypeProvider<ZodTypeProvider>();
 
@@ -22,6 +23,7 @@ app.register(loginRoute);
 app.register(profileRoute);
 app.register(verifyAccountRoute);
 app.register(resendCodeRoute);
+app.register(createClassRoute);
 
 app.setErrorHandler((error, _, reply) => {
   if (error instanceof ZodError) {

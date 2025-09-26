@@ -72,7 +72,7 @@ export const classes = pgTable(
     id: uuid().primaryKey().defaultRandom(),
     title: text(),
     description: text(),
-    date: date({ mode: "date" }).notNull(),
+    date: date({ mode: "string" }).notNull(),
     startTime: time().notNull(),
     endTime: time().notNull(),
     createdAt: timestamp({ withTimezone: true }).defaultNow(),
