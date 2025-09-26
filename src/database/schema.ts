@@ -16,6 +16,15 @@ export const beltRole = pgEnum("belts_role", [
   "brown",
   "black",
 ]);
+export const categoryRole = pgEnum("category_role", [
+  "Misto",
+  "Kids I",
+  "Kids II",
+  "Iniciante",
+  "Competição",
+  "Intermediário",
+  "Avançado",
+]);
 
 export const users = pgTable("users", {
   id: uuid().primaryKey().defaultRandom(),
@@ -36,6 +45,13 @@ export const belts = pgTable("belts", {
   belt: beltRole().notNull(),
   createdAt: timestamp().defaultNow(),
   requiredClasses: integer().notNull(),
+});
+
+export const categories = pgTable("categories", {
+  id: uuid().primaryKey().defaultRandom(),
+  type: categoryRole().notNull(),
+  description: text(),
+  createdAt: timestamp().defaultNow(),
 });
 
 export const emailConfirmations = pgTable("email_confirmations", {

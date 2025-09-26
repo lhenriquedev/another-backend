@@ -50,6 +50,13 @@
       "when": 1758742797386,
       "tag": "0006_gorgeous_mole_man",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1758911282428,
+      "tag": "0007_overrated_naoko",
+      "breakpoints": true
     }
   ]
 }
