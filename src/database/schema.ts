@@ -6,6 +6,8 @@ import {
   boolean,
   timestamp,
   integer,
+  date,
+  time,
 } from "drizzle-orm/pg-core";
 
 export const userRole = pgEnum("user_role", ["admin", "student", "instructor"]);
@@ -24,6 +26,13 @@ export const categoryRole = pgEnum("category_role", [
   "Competição",
   "Intermediário",
   "Avançado",
+]);
+
+export const statusRole = pgEnum("status_role", [
+  "finished",
+  "in-progress",
+  "cancelled",
+  "not-started",
 ]);
 
 export const users = pgTable("users", {
@@ -51,6 +60,29 @@ export const categories = pgTable("categories", {
   id: uuid().primaryKey().defaultRandom(),
   type: categoryRole().notNull(),
   description: text(),
+  createdAt: timestamp().defaultNow(),
+});
+
+export const classes = pgTable("classes", {
+  id: uuid().primaryKey().defaultRandom(),
+  title: text(),
+  description: text(),
+  date: date({ mode: "date" }).notNull(),
+  startTime: time().notNull(),
+  endTime: time().notNull(),
+  createdAt: timestamp().defaultNow(),
+  instructorId: uuid().references(() => users.id),
+  isRecurring: boolean().default(false),
+  recurrenceRule: text(),
+  recurrenceEndDate: date(),
+  capacity: integer(),
+  status: statusRole().default("not-started"),
+});
+
+export const checkins = pgTable("checkins", {
+  id: uuid().primaryKey().defaultRandom(),
+  userId: uuid().references(() => users.id),
+  classId: uuid().references(() => classes.id),
   createdAt: timestamp().defaultNow(),
 });
 

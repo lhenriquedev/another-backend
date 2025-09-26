@@ -57,6 +57,13 @@
       "when": 1758911282428,
       "tag": "0007_overrated_naoko",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1758912194546,
+      "tag": "0008_charming_santa_claus",
+      "breakpoints": true
     }
   ]
 }
