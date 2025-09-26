@@ -17,6 +17,7 @@ export const registerRoute: FastifyPluginAsyncZod = async (server) => {
           password: z.string(),
           name: z.string(),
           role: z.enum(["admin", "student"]).default("student"),
+          beltId: z.uuid(),
         }),
         response: {
           201: z.object({ code: z.string() }),
@@ -25,7 +26,7 @@ export const registerRoute: FastifyPluginAsyncZod = async (server) => {
       },
     },
     async (request, reply) => {
-      const { email, password, role, name } = request.body;
+      const { email, password, role, name, beltId } = request.body;
 
       const result = await db
         .select()
@@ -40,7 +41,14 @@ export const registerRoute: FastifyPluginAsyncZod = async (server) => {
 
       const [user] = await db
         .insert(users)
-        .values({ email, name, password: passwordHash, role, isActive: false })
+        .values({
+          email,
+          name,
+          password: passwordHash,
+          role,
+          isActive: false,
+          beltId,
+        })
         .returning();
 
       const code = generateNumericCode();
@@ -54,7 +62,7 @@ export const registerRoute: FastifyPluginAsyncZod = async (server) => {
 
       await resendVerificationEmail({ code, email, name });
 
-      return reply.status(201).send({ code });
+      return reply.status(201).send();
     }
   );
 };
