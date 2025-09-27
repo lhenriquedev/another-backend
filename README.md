@@ -7,25 +7,37 @@ Este é um backend Node.js construído com Fastify, Drizzle ORM e PostgreSQL.
 ```mermaid
 graph TD
     A[Cliente] -->|HTTP Request| B[Fastify Server :3333]
-    B --> C{Rota Disponível?}
-    C -->|Não| D[404 Not Found]
-    C -->|Sim| E[Handler da Rota]
-    E --> F{Precisa de Dados?}
-    F -->|Não| G[Resposta Direta]
-    F -->|Sim| H[Drizzle ORM]
-    H --> I[PostgreSQL Database]
-    I -->|Resultados| H
-    H -->|Dados Processados| E
-    E --> J[Resposta HTTP]
-    J --> A
-    
-    K[Docker Compose] -->|Gerencia| I
-    L[Migrations] -->|Atualiza Schema| I
-    M[Drizzle Studio] -->|Inspeciona| I
-    
+    B --> C{Escopo da Rota}
+
+    C -->|Auth| D[Cadastre / Login / Perfil]
+    D -->|Persistência| H[(Drizzle ORM)]
+
+    C -->|Classes| E[Rotas de Aulas]
+    E -->|Cria / Lista| H
+
+    C -->|Check-in| F[Controle de Presenças]
+    F -->|Valida Capacidade| E
+    F -->|Registra| H
+
+    D --> G[Serviço de E-mail]
+    E --> G
+    G -->|Resend| J[(Envio de Código)]
+
+    H --> I[(PostgreSQL)]
+
+    subgraph Operações
+        K[Docker Compose]
+        L[Migrations]
+        M[Drizzle Studio]
+    end
+
+    K --> I
+    L --> I
+    M --> I
+
     style B fill:#e1f5fe
-    style I fill:#f3e5f5
     style H fill:#e8f5e8
+    style I fill:#f3e5f5
 ```
 
 ## Arquitetura
@@ -33,7 +45,7 @@ graph TD
 ### Stack Tecnológica
 - **Fastify**: Framework web para servidor HTTP
 - **Drizzle ORM**: Toolkit type-safe para PostgreSQL  
-- **TypeScript**: Usando strip-types experimental para execução em runtime
+- **TypeScript + tsx**: Execução direta de módulos ESM com hot reload amigável
 - **PostgreSQL**: Database rodando em container Docker
 
 ### Estrutura do Projeto
@@ -78,7 +90,7 @@ A aplicação espera uma variável de ambiente `DATABASE_URL`. O `docker-compose
 
 ## Detalhes de Implementação
 
-- Usa a flag `--experimental-strip-types` do Node.js para execução direta de TypeScript
+- Execução de TypeScript via `tsx` com suporte completo a módulos ECMAScript
 - Schema do database usa chaves primárias UUID com valores padrão aleatórios
 - Migrations do Drizzle são armazenadas no diretório `./drizzle`
 - Servidor roda na porta 3333 por padrão
@@ -88,13 +100,27 @@ A aplicação espera uma variável de ambiente `DATABASE_URL`. O `docker-compose
 BELTS (id PK, belt, required_classes, created_at)
     ^
     | beltId
-USERS (id PK, name, email, password, role, is_active, belt_id, created_at, updated_at)
+USERS (id PK, name, email, password, role, is_active, belt_id FK -> BELTS.id,
+      created_at, updated_at)
     ^
-    | userId
-EMAIL_CONFIRMATIONS (id PK, code_hash, expires_at, is_consumed, created_at)
+    | instructorId
+CLASSES (id PK, title, description, date, start_time, end_time, capacity,
+        status, instructor_id FK -> USERS.id, category_id FK -> CATEGORIES.id,
+        created_at)
+    ^
+    | classId
+CHECKINS (id PK, user_id FK -> USERS.id, class_id FK -> CLASSES.id,
+         created_at) UNIQUE (user_id, class_id)
+
+CATEGORIES (id PK, type, description, created_at)
+
+EMAIL_CONFIRMATIONS (id PK, code_hash, expires_at, is_consumed,
+                    user_id FK -> USERS.id, created_at)
 ```
-- `users.beltId` referencia `belts.id` para determinar a graduação do aluno.
-- `email_confirmations.userId` referencia `users.id` e herda regras de cascade para manter o histórico limpo.
+- `users.beltId` referencia `belts.id` para controlar progressão de faixa.
+- `classes.categoryId` vincula categorias como Kids, Competição ou Avançado.
+- `checkins` aplica unicidade por aluno/aula para evitar duplicidade e remove dependências via cascade.
+- `email_confirmations.userId` herda regras de cascade para manter o histórico limpo.
 
 ## Diagrama Mermaid
 ```mermaid
