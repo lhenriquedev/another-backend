@@ -25,6 +25,7 @@ export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
             startTime: z.string().regex(timeRegex),
             endTime: z.string().regex(timeRegex),
             instructorId: z.uuid(),
+            categoryId: z.uuid(),
             capacity: z.coerce.number().default(10),
             status: z.enum([
               "finished",

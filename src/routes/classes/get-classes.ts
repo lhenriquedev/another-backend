@@ -50,6 +50,7 @@ export const getClassRoute: FastifyPluginAsyncZod = async (server) => {
             instructorId: classes.instructorId,
             capacity: classes.capacity,
             status: classes.status,
+            categoryId: classes.categoryId,
             totalCheckins: count(checkins.id),
           })
           .from(classes)
