@@ -75,22 +75,14 @@ export const classes = pgTable(
     date: date({ mode: "string" }).notNull(),
     startTime: time().notNull(),
     endTime: time().notNull(),
-    createdAt: timestamp({ withTimezone: true }).defaultNow(),
     instructorId: uuid().references(() => users.id),
-    isRecurring: boolean().default(false),
-    recurrenceRule: text(),
-    recurrenceEndDate: date({ mode: "string" }),
-    capacity: integer(),
+    capacity: integer().notNull().default(0),
     status: statusRole().default("not-started"),
+    createdAt: timestamp({ withTimezone: true }).defaultNow(),
   },
   (table) => [
     check("capacity_check", sql`${table.capacity} >= 0`),
     check("timeOrder_check", sql`${table.startTime} < ${table.endTime}`),
-    check(
-      "classes_recurrence_consistency_check",
-      sql`( ${table.isRecurring} = false AND ${table.recurrenceRule} IS NULL AND ${table.recurrenceEndDate} IS NULL )
-       OR ( ${table.isRecurring} = true AND ${table.recurrenceRule} IS NOT NULL AND ${table.recurrenceEndDate} IS NOT NULL )`
-    ),
   ]
 );
 

@@ -1,9 +1,11 @@
 import z from "zod";
-import { classes } from "../../database/schema.ts";
+import { classes, users } from "../../database/schema.ts";
 import { db } from "../../database/client.ts";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import { checkRequestJWT } from "../../hooks/check-request-jwt.ts";
 import { checkUserRole } from "../../hooks/check-user-role.ts";
+import { eq } from "drizzle-orm";
+import { getAuthenticatedUserFromRequest } from "../../utils/get-authenticated-user-from-request.ts";
 
 const dateRegex = /^\d{4}-\d{2}-\d{2}$/; // 2025-01-31
 const timeRegex = /^\d{2}:\d{2}(:\d{2})?$/; // 19:00 ou 19:00:00
@@ -14,7 +16,7 @@ export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
   server.post(
     "/create-class",
     {
-      preHandler: [checkRequestJWT, checkUserRole("admin")],
+      preHandler: [checkRequestJWT, checkUserRole("instructor")],
       schema: {
         body: z
           .object({
@@ -24,9 +26,6 @@ export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
             startTime: z.string().regex(timeRegex),
             endTime: z.string().regex(timeRegex),
             instructorId: z.uuid(),
-            isRecurring: z.boolean().optional().default(false),
-            recurrenceRule: z.string().optional(),
-            recurrenceEndDate: z.string().optional(),
             capacity: z.coerce.number().default(10),
             status: z.enum([
               "finished",
@@ -38,15 +37,7 @@ export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
           .refine((v) => v.startTime < v.endTime, {
             message: "startTime deve ser menor que endTime",
             path: ["startTime"],
-          })
-          .refine(
-            (v) => !v.isRecurring || (v.recurrenceRule && v.recurrenceEndDate),
-            {
-              message:
-                "recurrenceRule e recurrenceEndDate são obrigatórios quando isRecurring=true",
-              path: ["recurrenceRule"],
-            }
-          ),
+          }),
         response: {
           200: z.object({ id: z.string(), message: z.string() }),
           400: z.object({ message: z.string() }),
@@ -55,6 +46,15 @@ export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
     },
     async (request, reply) => {
       const data = request.body as NewClass;
+
+      const [instructor] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, data.instructorId ?? ""));
+
+      if (!instructor) {
+        return reply.status(400).send({ message: "Instrutor não cadastrado" });
+      }
 
       const [newClass] = await db.insert(classes).values(data).returning();
 
