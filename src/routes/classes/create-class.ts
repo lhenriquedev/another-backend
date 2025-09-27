@@ -5,7 +5,6 @@ import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import { checkRequestJWT } from "../../hooks/check-request-jwt.ts";
 import { checkUserRole } from "../../hooks/check-user-role.ts";
 import { eq } from "drizzle-orm";
-import { getAuthenticatedUserFromRequest } from "../../utils/get-authenticated-user-from-request.ts";
 
 const dateRegex = /^\d{4}-\d{2}-\d{2}$/; // 2025-01-31
 const timeRegex = /^\d{2}:\d{2}(:\d{2})?$/; // 19:00 ou 19:00:00
@@ -16,7 +15,7 @@ export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
   server.post(
     "/create-class",
     {
-      preHandler: [checkRequestJWT, checkUserRole("instructor")],
+      preHandler: [checkRequestJWT, checkUserRole(["instructor", "admin"])],
       schema: {
         body: z
           .object({
