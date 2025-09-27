@@ -50,14 +50,14 @@ export const users = pgTable("users", {
     .notNull()
     .references(() => belts.id),
 
-  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp().notNull().defaultNow(),
+  updatedAt: timestamp().notNull().defaultNow(),
 });
 
 export const belts = pgTable("belts", {
   id: uuid().primaryKey().defaultRandom(),
   belt: beltEnum().notNull(),
-  createdAt: timestamp({ withTimezone: true }).defaultNow(),
+  createdAt: timestamp().defaultNow(),
   requiredClasses: integer().notNull(),
 });
 
@@ -65,7 +65,7 @@ export const categories = pgTable("categories", {
   id: uuid().primaryKey().defaultRandom(),
   type: categoryRole().notNull(),
   description: text(),
-  createdAt: timestamp({ withTimezone: true }).defaultNow(),
+  createdAt: timestamp().defaultNow(),
 });
 
 export const classes = pgTable(
@@ -75,15 +75,15 @@ export const classes = pgTable(
     title: text(),
     description: text(),
     date: date({ mode: "string" }).notNull(),
-    startTime: timestamp({ withTimezone: true }).notNull(),
-    endTime: timestamp({ withTimezone: true }).notNull(),
+    startTime: timestamp().notNull(),
+    endTime: timestamp().notNull(),
     capacity: integer().notNull().default(0),
     status: statusRole().default("not-started"),
 
     instructorId: uuid().references(() => users.id),
     categoryId: uuid().references(() => categories.id),
 
-    createdAt: timestamp({ withTimezone: true }).defaultNow(),
+    createdAt: timestamp().defaultNow(),
   },
   (table) => [
     check("capacity_check", sql`${table.capacity} >= 0`),
@@ -103,9 +103,9 @@ export const checkins = pgTable(
       .notNull()
       .references(() => classes.id, { onDelete: "cascade" }),
     done: boolean().default(false),
-    completedAt: timestamp({ withTimezone: true }).defaultNow(),
+    completedAt: timestamp().defaultNow(),
 
-    createdAt: timestamp({ withTimezone: true }).defaultNow(),
+    createdAt: timestamp().defaultNow(),
   },
   (table) => [uniqueIndex().on(table.userId, table.classId)]
 );
@@ -114,7 +114,7 @@ export const emailConfirmations = pgTable("email_confirmations", {
   id: uuid().primaryKey().defaultRandom(),
 
   codeHash: text().notNull(),
-  expiresAt: timestamp({ withTimezone: true }).notNull(),
+  expiresAt: timestamp().notNull(),
   isConsumed: boolean().default(false),
 
   userId: uuid()

@@ -8,6 +8,13 @@
       "when": 1759014704972,
       "tag": "0000_little_tyger_tiger",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1759016185077,
+      "tag": "0001_smart_naoko",
+      "breakpoints": true
     }
   ]
 }

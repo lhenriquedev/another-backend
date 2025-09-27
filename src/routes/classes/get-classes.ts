@@ -50,12 +50,16 @@ export const getClassRoute: FastifyPluginAsyncZod = async (server) => {
             instructorId: classes.instructorId,
             capacity: classes.capacity,
             // status: classes.status,
-            status: sql`CASE
-                WHEN NOW() < ${classes.startTime} THEN 'not-started'
-                WHEN NOW() >= ${classes.startTime} AND NOW() < ${classes.endTime} THEN 'in-progress'
+            status: sql`
+              CASE
+                WHEN NOW() AT TIME ZONE 'America/Sao_Paulo' < ${classes.startTime} AT TIME ZONE 'America/Sao_Paulo' 
+                  THEN 'not-started'
+                WHEN NOW() AT TIME ZONE 'America/Sao_Paulo' >= ${classes.startTime} AT TIME ZONE 'America/Sao_Paulo'
+                 AND NOW() AT TIME ZONE 'America/Sao_Paulo' < ${classes.endTime} AT TIME ZONE 'America/Sao_Paulo'
+                  THEN 'in-progress'
                 ELSE 'finished'
-                END
-              `.as("status"),
+              END
+            `.as("status"),
             categoryId: classes.categoryId,
             totalCheckins: count(checkins.id),
           })

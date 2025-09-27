@@ -1,5 +1,5 @@
 import z from "zod";
-import { classes, users } from "../../database/schema.ts";
+import { categories, classes, users } from "../../database/schema.ts";
 import { db } from "../../database/client.ts";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import { checkRequestJWT } from "../../hooks/check-request-jwt.ts";
@@ -16,9 +16,11 @@ export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
           .object({
             title: z.string().optional(),
             description: z.string().optional(),
-            date: z.any(),
-            startTime: z.any(),
-            endTime: z.any(),
+            date: z
+              .string()
+              .regex(/^\d{4}-\d{2}-\d{2}$/, "Formato inválido, use YYYY-MM-DD"),
+            startTime: z.coerce.date(), // valida ISO 8601
+            endTime: z.coerce.date(),
             instructorId: z.uuid(),
             categoryId: z.uuid(),
             capacity: z.coerce.number().default(10),
@@ -42,16 +44,33 @@ export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
     async (request, reply) => {
       const data = request.body;
 
-      const [instructor] = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, data.instructorId ?? ""));
+      const [instructor, category] = await Promise.all([
+        db
+          .select()
+          .from(users)
+          .where(eq(users.id, data.instructorId ?? "")),
+        db
+          .select()
+          .from(categories)
+          .where(eq(categories.id, data.categoryId ?? "")),
+      ]);
 
-      if (!instructor) {
+      if (!category.length) {
+        return reply.status(400).send({ message: "Categoria não cadastrada" });
+      }
+
+      if (!instructor.length) {
         return reply.status(400).send({ message: "Instrutor não cadastrado" });
       }
 
-      const [newClass] = await db.insert(classes).values(data).returning();
+      const [newClass] = await db
+        .insert(classes)
+        .values({
+          ...data,
+          startTime: new Date(data.startTime),
+          endTime: new Date(data.endTime),
+        })
+        .returning();
 
       return reply
         .status(200)
