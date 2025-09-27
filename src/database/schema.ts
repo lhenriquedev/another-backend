@@ -45,9 +45,11 @@ export const users = pgTable("users", {
   password: text().notNull(),
   role: userRole().notNull().default("student"),
   isActive: boolean().notNull().default(false),
+
   beltId: uuid()
     .notNull()
     .references(() => belts.id),
+
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
@@ -75,9 +77,12 @@ export const classes = pgTable(
     date: date({ mode: "string" }).notNull(),
     startTime: time().notNull(),
     endTime: time().notNull(),
-    instructorId: uuid().references(() => users.id),
     capacity: integer().notNull().default(0),
     status: statusRole().default("not-started"),
+
+    instructorId: uuid().references(() => users.id),
+    categoryId: uuid().references(() => categories.id),
+
     createdAt: timestamp({ withTimezone: true }).defaultNow(),
   },
   (table) => [
@@ -90,12 +95,14 @@ export const checkins = pgTable(
   "checkins",
   {
     id: uuid().primaryKey().defaultRandom(),
+
     userId: uuid()
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     classId: uuid()
       .notNull()
       .references(() => classes.id, { onDelete: "cascade" }),
+
     createdAt: timestamp({ withTimezone: true }).defaultNow(),
   },
   (table) => [uniqueIndex().on(table.userId, table.classId)]
@@ -103,11 +110,14 @@ export const checkins = pgTable(
 
 export const emailConfirmations = pgTable("email_confirmations", {
   id: uuid().primaryKey().defaultRandom(),
-  userId: uuid()
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade", onUpdate: "cascade" }),
+
   codeHash: text().notNull(),
   expiresAt: timestamp({ withTimezone: true }).notNull(),
   isConsumed: boolean().default(false),
+
+  userId: uuid()
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade", onUpdate: "cascade" }),
+
   createdAt: timestamp().notNull().defaultNow(),
 });
