@@ -14,7 +14,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 export const userRole = pgEnum("user_role", ["admin", "student", "instructor"]);
-export const beltRole = pgEnum("belts_role", [
+export const beltEnum = pgEnum("belts_role", [
   "white",
   "blue",
   "purple",
@@ -56,7 +56,7 @@ export const users = pgTable("users", {
 
 export const belts = pgTable("belts", {
   id: uuid().primaryKey().defaultRandom(),
-  belt: beltRole().notNull(),
+  belt: beltEnum().notNull(),
   createdAt: timestamp({ withTimezone: true }).defaultNow(),
   requiredClasses: integer().notNull(),
 });
@@ -75,8 +75,8 @@ export const classes = pgTable(
     title: text(),
     description: text(),
     date: date({ mode: "string" }).notNull(),
-    startTime: time().notNull(),
-    endTime: time().notNull(),
+    startTime: timestamp({ withTimezone: true }).notNull(),
+    endTime: timestamp({ withTimezone: true }).notNull(),
     capacity: integer().notNull().default(0),
     status: statusRole().default("not-started"),
 
@@ -102,6 +102,8 @@ export const checkins = pgTable(
     classId: uuid()
       .notNull()
       .references(() => classes.id, { onDelete: "cascade" }),
+    done: boolean().default(false),
+    completedAt: timestamp({ withTimezone: true }).defaultNow(),
 
     createdAt: timestamp({ withTimezone: true }).defaultNow(),
   },

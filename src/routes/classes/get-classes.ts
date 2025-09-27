@@ -4,7 +4,7 @@ import { checkRequestJWT } from "../../hooks/check-request-jwt.ts";
 import { checkUserRole } from "../../hooks/check-user-role.ts";
 import { db } from "../../database/client.ts";
 import { checkins, classes, users } from "../../database/schema.ts";
-import { and, count, eq, SQL } from "drizzle-orm";
+import { and, count, eq, sql, SQL } from "drizzle-orm";
 
 export const getClassRoute: FastifyPluginAsyncZod = async (server) => {
   server.get(
@@ -49,7 +49,13 @@ export const getClassRoute: FastifyPluginAsyncZod = async (server) => {
             endTime: classes.endTime,
             instructorId: classes.instructorId,
             capacity: classes.capacity,
-            status: classes.status,
+            // status: classes.status,
+            status: sql`CASE
+                WHEN NOW() < ${classes.startTime} THEN 'not-started'
+                WHEN NOW() >= ${classes.startTime} AND NOW() < ${classes.endTime} THEN 'in-progress'
+                ELSE 'finished'
+                END
+              `.as("status"),
             categoryId: classes.categoryId,
             totalCheckins: count(checkins.id),
           })

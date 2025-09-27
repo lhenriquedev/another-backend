@@ -1,1 +1,0 @@
-ALTER TABLE "belts" ADD COLUMN "requiredClasses" integer NOT NULL;
