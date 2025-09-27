@@ -6,11 +6,6 @@ import { checkRequestJWT } from "../../hooks/check-request-jwt.ts";
 import { checkUserRole } from "../../hooks/check-user-role.ts";
 import { eq } from "drizzle-orm";
 
-const dateRegex = /^\d{4}-\d{2}-\d{2}$/; // 2025-01-31
-const timeRegex = /^\d{2}:\d{2}(:\d{2})?$/; // 19:00 ou 19:00:00
-
-type NewClass = typeof classes.$inferInsert;
-
 export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
   server.post(
     "/create-class",
@@ -21,9 +16,9 @@ export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
           .object({
             title: z.string().optional(),
             description: z.string().optional(),
-            date: z.string().regex(dateRegex),
-            startTime: z.string().regex(timeRegex),
-            endTime: z.string().regex(timeRegex),
+            date: z.any(),
+            startTime: z.any(),
+            endTime: z.any(),
             instructorId: z.uuid(),
             categoryId: z.uuid(),
             capacity: z.coerce.number().default(10),
@@ -45,7 +40,7 @@ export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
       },
     },
     async (request, reply) => {
-      const data = request.body as NewClass;
+      const data = request.body;
 
       const [instructor] = await db
         .select()

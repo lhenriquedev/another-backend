@@ -2,8 +2,8 @@ services:
   db:
     image: postgres:17
     environment:
-      POSTGRES_USER: another
-      POSTGRES_PASSWORD: another
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
       POSTGRES_DB: another_backend
     ports:
-      - "5434:5434"
+      - "5432:5432"
