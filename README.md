@@ -39,7 +39,19 @@ graph TD
 ### Estrutura do Projeto
 ```
 src/
+├── app.ts              # Registra rotas e tratadores globais
 ├── server.ts           # Ponto de entrada da aplicação
+├── routes/
+│   ├── auth/           # Fluxo de cadastro, login e verificação
+│   ├── classes/
+│   │   ├── create-class.ts   # Criação de aulas com validação Zod
+│   │   └── get-classes.ts    # Consulta de aulas com agregação de check-ins
+│   └── checkin/
+│       └── create-checkin.ts # Controle de presença antes do início da aula
+├── services/
+│   └── mail/
+│       ├── resend.ts         # Cliente Resend para e-mails de verificação
+│       └── templates/        # Componentes React usados nos envios
 └── database/
     ├── client.ts       # Configuração do cliente Drizzle
     └── schema.ts       # Definições do schema do database
@@ -112,4 +124,7 @@ sequenceDiagram
 - Verificação de conta consome códigos dentro de uma transação e libera o usuário (`isActive = true`).
 - Login valida credenciais com bcrypt, bloqueia contas inativas e retorna JWT assinado com role.
 - Rota `/me` usa middleware JWT, schemas Zod e handler de erros centralizado para respostas consistentes.
-
+- Rota `POST /create-class` permite que instrutores ou administradores montem aulas informando agenda, lotação e responsáveis.
+- Rota `GET /get-classes` lista aulas com contagem de participantes e nomes dos alunos confirmados, com filtro opcional por data.
+- Rota `POST /create-checkin` garante controle de presença impedindo duplicidades e bloqueando check-ins após o início da aula.
+- Serviço `resendVerificationEmail` centraliza o envio de e-mails transacionais via Resend com template React tipado.
