@@ -7,6 +7,7 @@ import { checkUserRole } from "../../hooks/check-user-role.ts";
 import { and, count, eq, sql } from "drizzle-orm";
 import { getAuthenticatedUserFromRequest } from "../../utils/get-authenticated-user-from-request.ts";
 import { parseISO } from "date-fns";
+import { getClassStatus } from "../../utils/get-class-status.ts";
 
 export const createCheckinRoute: FastifyPluginAsyncZod = async (server) => {
   server.post(
@@ -37,14 +38,10 @@ export const createCheckinRoute: FastifyPluginAsyncZod = async (server) => {
         return reply.status(400).send({ message: "Aula não existe" });
       }
 
-      const now = new Date();
-      const startTime = new Date(classData.startTime);
-      const endTime = new Date(classData.endTime);
-
-      let status: "not-started" | "in-progress" | "finished";
-      if (now < startTime) status = "not-started";
-      else if (now >= startTime && now < endTime) status = "in-progress";
-      else status = "finished";
+      const status = getClassStatus({
+        startTime: classData.startTime,
+        endTime: classData.endTime,
+      });
 
       // Bloquear check-in se não estiver em "not-started"
       if (status !== "not-started") {
