@@ -40,6 +40,14 @@ export const createCheckinRoute: FastifyPluginAsyncZod = async (server) => {
       const now = new Date();
       const startDateTime = parseISO(`${classData}T${classData.startTime}`);
 
+      if (classData.status === "finished") {
+        return reply.status(400).send({ message: "Aula já finalizada" });
+      }
+
+      if (classData.status === "in-progress" || now >= startDateTime) {
+        return reply.status(400).send({ message: "Está aula já começou" });
+      }
+
       const [existingCheckin] = await db
         .select()
         .from(checkins)
@@ -49,10 +57,6 @@ export const createCheckinRoute: FastifyPluginAsyncZod = async (server) => {
         return reply.status(409).send({
           message: "Aluno já está possui check-in nesta aula",
         });
-      }
-
-      if (now >= startDateTime || classData.status === "in-progress") {
-        return reply.status(400).send({ message: "Está aula já começou" });
       }
 
       const [{ totalCheckins }] = await db
