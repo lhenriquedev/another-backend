@@ -39,6 +39,7 @@ export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
     },
     async (request, reply) => {
       const data = request.body;
+      const timezone = "America/Sao_Paulo";
 
       const [instructor, category] = await Promise.all([
         db
@@ -59,7 +60,6 @@ export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
         return reply.status(400).send({ message: "Instrutor não cadastrado" });
       }
 
-      const timezone = "America/Sao_Paulo";
       const startUTC = fromZonedTime(new Date(data.startTime), timezone);
       const endUTC = fromZonedTime(new Date(data.endTime), timezone);
 

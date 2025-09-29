@@ -31,12 +31,12 @@ export const categoryRole = pgEnum("category_role", [
   "Avançado",
 ]);
 
-export const statusRole = pgEnum("status_role", [
-  "finished",
-  "in-progress",
-  "cancelled",
-  "not-started",
-]);
+// export const statusRole = pgEnum("status_role", [
+//   "finished",
+//   "in-progress",
+//   "cancelled",
+//   "not-started",
+// ]);
 
 export const checkinStatus = pgEnum("checkin_status", [
   "pending",
@@ -84,7 +84,7 @@ export const classes = pgTable(
     startTime: timestamp({ withTimezone: true }).notNull(),
     endTime: timestamp({ withTimezone: true }).notNull(),
     capacity: integer().notNull().default(0),
-    status: statusRole().default("not-started"),
+    // status: statusRole().default("not-started"),
 
     instructorId: uuid().references(() => users.id),
     categoryId: uuid().references(() => categories.id),

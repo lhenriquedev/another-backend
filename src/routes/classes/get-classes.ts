@@ -50,7 +50,6 @@ export const getClassRoute: FastifyPluginAsyncZod = async (server) => {
             endTime: classes.endTime,
             instructorId: classes.instructorId,
             capacity: classes.capacity,
-            status: classes.status,
             categoryId: classes.categoryId,
             totalCheckins: sql<number>`CAST(COUNT(CASE WHEN ${checkins.status} != 'cancelled' THEN 1 END) as int)`,
           })
@@ -72,17 +71,20 @@ export const getClassRoute: FastifyPluginAsyncZod = async (server) => {
       const TIMEZONE = "America/Sao_Paulo";
 
       const result = classesData.map((_class) => {
-        const startLocal = toZonedTime(_class.startTime, TIMEZONE);
-        const endLocal = toZonedTime(_class.endTime, TIMEZONE);
+        const timeZone = "America/Sao_Paulo";
+
+        const now = toZonedTime(new Date(), timeZone);
+        const startTime = toZonedTime(new Date(_class.startTime), timeZone);
+        const endTime = toZonedTime(new Date(_class.endTime), timeZone);
+
+        let status: "not-started" | "in-progress" | "finished";
+        if (now < startTime) status = "not-started";
+        else if (now >= startTime && now < endTime) status = "in-progress";
+        else status = "finished";
 
         return {
           ..._class,
-          startTime: formatInTimeZone(
-            startLocal,
-            TIMEZONE,
-            "yyyy-MM-dd HH:mm:ss"
-          ),
-          endTime: formatInTimeZone(endLocal, TIMEZONE, "yyyy-MM-dd HH:mm:ss"),
+          status,
           usersInClass: usersInClass
             .filter((user) => user.classId === _class.id)
             .map((user) => ({
