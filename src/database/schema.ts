@@ -81,8 +81,8 @@ export const classes = pgTable(
     title: text(),
     description: text(),
     date: date({ mode: "string" }).notNull(),
-    startTime: timestamp().notNull(),
-    endTime: timestamp().notNull(),
+    startTime: timestamp({ withTimezone: true }).notNull(),
+    endTime: timestamp({ withTimezone: true }).notNull(),
     capacity: integer().notNull().default(0),
     status: statusRole().default("not-started"),
 

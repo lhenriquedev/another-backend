@@ -1,10 +1,12 @@
 import z from "zod";
 import { categories, classes, users } from "../../database/schema.ts";
-import { db } from "../../database/client.ts";
-import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import { checkRequestJWT } from "../../hooks/check-request-jwt.ts";
 import { checkUserRole } from "../../hooks/check-user-role.ts";
+import { db } from "../../database/client.ts";
 import { eq } from "drizzle-orm";
+import { format } from "date-fns";
+import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
+import { fromZonedTime } from "date-fns-tz";
 
 export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
   server.post(
@@ -24,12 +26,6 @@ export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
             instructorId: z.uuid(),
             categoryId: z.uuid(),
             capacity: z.coerce.number().default(10),
-            status: z.enum([
-              "finished",
-              "in-progress",
-              "cancelled",
-              "not-started",
-            ]),
           })
           .refine((v) => v.startTime < v.endTime, {
             message: "startTime deve ser menor que endTime",
@@ -63,12 +59,21 @@ export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
         return reply.status(400).send({ message: "Instrutor não cadastrado" });
       }
 
+      const timezone = "America/Sao_Paulo";
+      const startUTC = fromZonedTime(new Date(data.startTime), timezone);
+      const endUTC = fromZonedTime(new Date(data.endTime), timezone);
+
       const [newClass] = await db
         .insert(classes)
         .values({
-          ...data,
-          startTime: new Date(data.startTime),
-          endTime: new Date(data.endTime),
+          title: data.title ?? "",
+          description: data.description ?? "",
+          date: data.date,
+          startTime: startUTC,
+          endTime: endUTC,
+          instructorId: data.instructorId,
+          categoryId: data.categoryId,
+          capacity: data.capacity,
         })
         .returning();
 

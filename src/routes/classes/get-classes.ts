@@ -5,6 +5,7 @@ import { checkUserRole } from "../../hooks/check-user-role.ts";
 import { db } from "../../database/client.ts";
 import { checkins, classes, users } from "../../database/schema.ts";
 import { and, count, eq, sql, SQL } from "drizzle-orm";
+import { formatInTimeZone, toZonedTime } from "date-fns-tz";
 
 export const getClassRoute: FastifyPluginAsyncZod = async (server) => {
   server.get(
@@ -49,17 +50,7 @@ export const getClassRoute: FastifyPluginAsyncZod = async (server) => {
             endTime: classes.endTime,
             instructorId: classes.instructorId,
             capacity: classes.capacity,
-            // status: classes.status,
-            status: sql`
-              CASE
-                WHEN NOW() AT TIME ZONE 'America/Sao_Paulo' < ${classes.startTime} AT TIME ZONE 'America/Sao_Paulo' 
-                  THEN 'not-started'
-                WHEN NOW() AT TIME ZONE 'America/Sao_Paulo' >= ${classes.startTime} AT TIME ZONE 'America/Sao_Paulo'
-                 AND NOW() AT TIME ZONE 'America/Sao_Paulo' < ${classes.endTime} AT TIME ZONE 'America/Sao_Paulo'
-                  THEN 'in-progress'
-                ELSE 'finished'
-              END
-            `.as("status"),
+            status: classes.status,
             categoryId: classes.categoryId,
             totalCheckins: sql<number>`CAST(COUNT(CASE WHEN ${checkins.status} != 'cancelled' THEN 1 END) as int)`,
           })
@@ -78,17 +69,29 @@ export const getClassRoute: FastifyPluginAsyncZod = async (server) => {
           .innerJoin(users, eq(users.id, checkins.userId)),
         db.$count(classes, whereClause),
       ]);
+      const TIMEZONE = "America/Sao_Paulo";
 
-      const result = classesData.map((_class) => ({
-        ..._class,
-        usersInClass: usersInClass
-          .filter((user) => user.classId === _class.id)
-          .map((user) => ({
-            id: user.id,
-            name: user.name,
-            status: user.checkinStatus,
-          })),
-      }));
+      const result = classesData.map((_class) => {
+        const startLocal = toZonedTime(_class.startTime, TIMEZONE);
+        const endLocal = toZonedTime(_class.endTime, TIMEZONE);
+
+        return {
+          ..._class,
+          startTime: formatInTimeZone(
+            startLocal,
+            TIMEZONE,
+            "yyyy-MM-dd HH:mm:ss"
+          ),
+          endTime: formatInTimeZone(endLocal, TIMEZONE, "yyyy-MM-dd HH:mm:ss"),
+          usersInClass: usersInClass
+            .filter((user) => user.classId === _class.id)
+            .map((user) => ({
+              id: user.id,
+              name: user.name,
+              status: user.checkinStatus,
+            })),
+        };
+      });
 
       return reply.send({ classes: result, total });
     }
