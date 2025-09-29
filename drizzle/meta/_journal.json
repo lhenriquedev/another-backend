@@ -15,6 +15,13 @@
       "when": 1759016185077,
       "tag": "0001_smart_naoko",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1759176412865,
+      "tag": "0002_overrated_quentin_quire",
+      "breakpoints": true
     }
   ]
 }

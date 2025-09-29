@@ -38,6 +38,12 @@ export const statusRole = pgEnum("status_role", [
   "not-started",
 ]);
 
+export const checkinStatus = pgEnum("checkin_status", [
+  "pending",
+  "done",
+  "cancelled",
+]);
+
 export const users = pgTable("users", {
   id: uuid().primaryKey().defaultRandom(),
   name: text().notNull(),
@@ -104,6 +110,7 @@ export const checkins = pgTable(
       .references(() => classes.id, { onDelete: "cascade" }),
     done: boolean().default(false),
     completedAt: timestamp().defaultNow(),
+    status: checkinStatus().default("pending"),
 
     createdAt: timestamp().defaultNow(),
   },

@@ -14,6 +14,7 @@ import { ZodError } from "zod";
 import { createClassRoute } from "./routes/classes/create-class.ts";
 import { getClassRoute } from "./routes/classes/get-classes.ts";
 import { createCheckinRoute } from "./routes/checkin/create-checkin.ts";
+import { cancelCheckinRoute } from "./routes/checkin/cancel-checkin.ts";
 
 const app = fastify().withTypeProvider<ZodTypeProvider>();
 
@@ -28,6 +29,7 @@ app.register(resendCodeRoute);
 app.register(createClassRoute);
 app.register(getClassRoute);
 app.register(createCheckinRoute);
+app.register(cancelCheckinRoute);
 
 app.setErrorHandler((error, _, reply) => {
   if (error instanceof ZodError) {

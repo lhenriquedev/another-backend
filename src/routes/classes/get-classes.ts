@@ -61,14 +61,19 @@ export const getClassRoute: FastifyPluginAsyncZod = async (server) => {
               END
             `.as("status"),
             categoryId: classes.categoryId,
-            totalCheckins: count(checkins.id),
+            totalCheckins: sql<number>`CAST(COUNT(CASE WHEN ${checkins.status} != 'cancelled' THEN 1 END) as int)`,
           })
           .from(classes)
           .leftJoin(checkins, eq(checkins.classId, classes.id))
           .where(whereClause)
           .groupBy(classes.id),
         db
-          .select({ classId: checkins.classId, name: users.name, id: users.id })
+          .select({
+            classId: checkins.classId,
+            name: users.name,
+            id: users.id,
+            checkinStatus: checkins.status,
+          })
           .from(checkins)
           .innerJoin(users, eq(users.id, checkins.userId)),
         db.$count(classes, whereClause),
@@ -78,7 +83,11 @@ export const getClassRoute: FastifyPluginAsyncZod = async (server) => {
         ..._class,
         usersInClass: usersInClass
           .filter((user) => user.classId === _class.id)
-          .map((user) => ({ id: user.id, name: user.name })),
+          .map((user) => ({
+            id: user.id,
+            name: user.name,
+            status: user.checkinStatus,
+          })),
       }));
 
       return reply.send({ classes: result, total });
