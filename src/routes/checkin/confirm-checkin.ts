@@ -7,7 +7,7 @@ import { eq } from "drizzle-orm";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 
 export const confirmCheckinRoute: FastifyPluginAsyncZod = async (server) => {
-  server.post(
+  server.patch(
     "/confirm-checkin",
     {
       preHandler: [

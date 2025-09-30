@@ -4,8 +4,9 @@ import { checkRequestJWT } from "../../hooks/check-request-jwt.ts";
 import { checkUserRole } from "../../hooks/check-user-role.ts";
 import { db } from "../../database/client.ts";
 import { eq } from "drizzle-orm";
-import { fromZonedTime } from "date-fns-tz";
+import { fromZonedTime, toZonedTime } from "date-fns-tz";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
+import { isBefore, parseISO, startOfDay } from "date-fns";
 
 export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
   server.post(
@@ -17,11 +18,9 @@ export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
           .object({
             title: z.string().optional(),
             description: z.string().optional(),
-            date: z
-              .string()
-              .regex(/^\d{4}-\d{2}-\d{2}$/, "Formato inválido, use YYYY-MM-DD"),
-            startTime: z.coerce.date(), // valida ISO 8601
-            endTime: z.coerce.date(),
+            date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+            startTime: z.string().regex(/^\d{2}:\d{2}$/), // Formato HH:mm como "19:43"
+            endTime: z.string().regex(/^\d{2}:\d{2}$/), // Formato HH:mm como "21:30"
             instructorId: z.uuid(),
             categoryId: z.uuid(),
             capacity: z.coerce.number().default(10),
@@ -37,42 +36,100 @@ export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
       },
     },
     async (request, reply) => {
-      const data = request.body;
+      const {
+        title,
+        description,
+        date,
+        startTime,
+        endTime,
+        instructorId,
+        categoryId,
+        capacity,
+      } = request.body;
+
       const timezone = "America/Sao_Paulo";
 
-      const [instructor, category] = await Promise.all([
-        db
-          .select()
-          .from(users)
-          .where(eq(users.id, data.instructorId ?? "")),
-        db
-          .select()
-          .from(categories)
-          .where(eq(categories.id, data.categoryId ?? "")),
-      ]);
+      const classDate = parseISO(date);
+      const today = startOfDay(toZonedTime(new Date(), timezone));
 
-      if (!category.length) {
-        return reply.status(400).send({ message: "Categoria não cadastrada" });
+      if (isBefore(classDate, today)) {
+        return reply.status(400).send({
+          message: "Não é possível criar aulas em datas passadas",
+        });
       }
 
-      if (!instructor.length) {
-        return reply.status(400).send({ message: "Instrutor não cadastrado" });
+      const [instructor] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, instructorId));
+
+      if (!instructor) {
+        return reply.status(400).send({
+          message: "Instrutor não encontrado",
+        });
       }
 
-      const startUTC = fromZonedTime(new Date(data.startTime), timezone);
-      const endUTC = fromZonedTime(new Date(data.endTime), timezone);
+      if (instructor.role === "student") {
+        return reply.status(400).send({
+          message: "Usuário especificado não é um instrutor ",
+        });
+      }
+
+      const [category] = await db
+        .select()
+        .from(categories)
+        .where(eq(categories.id, categoryId));
+
+      if (!category) {
+        return reply.status(400).send({
+          message: "Categoria não encontrada",
+        });
+      }
+
+      // Aqui vem a parte crucial: construir os timestamps corretamente
+      // Separar horas e minutos dos horários fornecidos
+      const [startHour, startMinute] = startTime.split(":").map(Number);
+      const [endHour, endMinute] = endTime.split(":").map(Number);
+
+      // Criar objetos Date com a data fornecida e os horários
+      // Esses objetos representam momentos no timezone de São Paulo
+      const startDateTime = new Date(classDate);
+      startDateTime.setHours(startHour, startMinute, 0, 0);
+
+      const endDateTime = new Date(classDate);
+      endDateTime.setHours(endHour, endMinute, 0, 0);
+
+      if (startDateTime >= endDateTime) {
+        return reply.status(400).send({
+          message: "Horário de início deve ser anterior ao horário de término",
+        });
+      }
+
+      const startTimeUTC = fromZonedTime(startDateTime, timezone);
+      const endTimeUTC = fromZonedTime(endDateTime, timezone);
+
+      const now = new Date();
+      let initialStatus: "not-started" | "in-progress" | "finished";
+
+      if (now < startTimeUTC) {
+        initialStatus = "not-started";
+      } else if (now >= startTimeUTC && now < endTimeUTC) {
+        initialStatus = "in-progress";
+      } else {
+        initialStatus = "finished";
+      }
 
       const [newClass] = await db
         .insert(classes)
         .values({
-          title: data.title ?? "",
-          description: data.description ?? "",
-          date: data.date,
-          startTime: startUTC,
-          endTime: endUTC,
-          instructorId: data.instructorId,
-          categoryId: data.categoryId,
-          capacity: data.capacity,
+          title,
+          description,
+          date, // Mantém a data como string no formato yyyy-MM-dd
+          startTime: startTimeUTC, // Timestamp em UTC
+          endTime: endTimeUTC, // Timestamp em UTC
+          instructorId,
+          categoryId,
+          capacity,
         })
         .returning();
 
