@@ -6,6 +6,7 @@ import { checkUserRole } from "../../hooks/check-user-role.ts";
 import { db } from "../../database/client.ts";
 import { getAuthenticatedUserFromRequest } from "../../utils/get-authenticated-user-from-request.ts";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
+import { getClassStatus } from "../../utils/get-class-status.ts";
 
 export const cancelCheckinRoute: FastifyPluginAsyncZod = async (server) => {
   server.patch(
@@ -16,18 +17,22 @@ export const cancelCheckinRoute: FastifyPluginAsyncZod = async (server) => {
         checkUserRole(["instructor", "admin", "student"]),
       ],
       schema: {
-        body: z.object({ classId: uuid() }),
+        body: z.object({ classId: uuid(), userId: uuid().optional() }),
         response: {
           200: z.object({ message: z.string() }),
           400: z.object({ message: z.string() }),
+          403: z.object({ message: z.string() }),
         },
       },
     },
     async (request, reply) => {
       const user = getAuthenticatedUserFromRequest(request);
-      const userId = user.sub;
+      const currentUserId = user.sub;
+      const currentUserRole = user.role;
 
-      const { classId } = request.body;
+      const { classId, userId: targetUserId } = request.body;
+
+      const userId = targetUserId || currentUserId;
 
       const [classData] = await db
         .select()
@@ -51,14 +56,44 @@ export const cancelCheckinRoute: FastifyPluginAsyncZod = async (server) => {
         return reply.status(400).send({ message: "Check-in já cancelado" });
       }
 
+      const isInstructorOfClass =
+        currentUserRole === "instructor" &&
+        currentUserId === classData.instructorId;
+
+      const isAdmin = currentUserRole === "admin";
+
+      const hasSpecialPermission = isInstructorOfClass || isAdmin;
+
+      if (!hasSpecialPermission) {
+        if (userId !== currentUserId) {
+          return reply.status(403).send({
+            message: "Você só pode cancelar seu próprio check-in",
+          });
+        }
+
+        const status = getClassStatus({
+          startTime: classData.startTime,
+          endTime: classData.endTime,
+        });
+
+        if (status !== "not-started") {
+          return reply.status(400).send({
+            message: "Não é possível cancelar check-in após o início da aula",
+          });
+        }
+      }
+
       await db
         .update(checkins)
-        .set({ status: "cancelled" })
+        .set({ status: "cancelled", done: false, completedAt: null })
         .where(and(eq(checkins.userId, userId), eq(checkins.classId, classId)));
 
-      return reply
-        .status(200)
-        .send({ message: "Check-in cancelado com sucesso" });
+      const message =
+        userId === currentUserId
+          ? "Check-in cancelado com sucesso"
+          : "Check-in do aluno cancelado com sucesso";
+
+      return reply.status(200).send({ message });
     }
   );
 };

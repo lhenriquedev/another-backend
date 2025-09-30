@@ -4,7 +4,7 @@ declare module "fastify" {
   export interface FastifyRequest {
     user?: {
       sub: string;
-      role: "student" | "admin";
+      role: "student" | "admin" | "instructor";
     };
   }
 }

@@ -17,19 +17,23 @@ export const createCheckinRoute: FastifyPluginAsyncZod = async (server) => {
         checkUserRole(["instructor", "admin", "student"]),
       ],
       schema: {
-        body: z.object({ classId: uuid() }),
+        body: z.object({ classId: uuid(), userId: uuid().optional() }),
         response: {
           200: z.object({ message: z.string() }),
           400: z.object({ message: z.string() }),
+          403: z.object({ message: z.string() }),
           409: z.object({ message: z.string() }),
         },
       },
     },
     async (request, reply) => {
       const user = getAuthenticatedUserFromRequest(request);
-      const userId = user.sub;
+      const currentUserId = user.sub;
+      const currentUserRole = user.role;
 
-      const { classId } = request.body;
+      const { classId, userId: targetUserId } = request.body;
+
+      const userId = targetUserId || currentUserId;
 
       const [classData] = await db
         .select()
@@ -52,14 +56,47 @@ export const createCheckinRoute: FastifyPluginAsyncZod = async (server) => {
           .send({ message: "Não é possível fazer check-in nessa aula" });
       }
 
+      const isInstructorOfClass =
+        currentUserRole === "instructor" &&
+        currentUserId === classData.instructorId;
+
+      const isAdmin = currentUserRole === "admin";
+
+      const hasSpecialPermission = isInstructorOfClass || isAdmin;
+
+      if (!hasSpecialPermission) {
+        if (userId !== currentUserId) {
+          return reply
+            .status(403)
+            .send({ message: "Você só pode fazer check-in para sí mesmo" });
+        }
+
+        if (status !== "not-started") {
+          return reply.status(400).send({
+            message: "Não é possível fazer check-in após o início da aula",
+          });
+        }
+      }
+
       const [existingCheckin] = await db
         .select()
         .from(checkins)
         .where(and(eq(checkins.userId, userId), eq(checkins.classId, classId)));
 
-      if (existingCheckin && existingCheckin.status !== "cancelled") {
+      if (existingCheckin) {
+        if (existingCheckin.status === "cancelled") {
+          await db
+            .update(checkins)
+            .set({ status: "pending", done: false, completedAt: null })
+            .where(eq(checkins.id, existingCheckin.id));
+
+          return reply.status(409).send({
+            message: "Check-in reativado com sucesso",
+          });
+        }
+
         return reply.status(409).send({
-          message: "Aluno já está possui check-in nesta aula",
+          message: "Já existe um check-in ativo para este aluno nesta aula",
         });
       }
 
@@ -78,7 +115,12 @@ export const createCheckinRoute: FastifyPluginAsyncZod = async (server) => {
 
       await db.insert(checkins).values({ userId, classId });
 
-      return reply.status(200).send({ message: "Você fez check-in na aula" });
+      const message =
+        userId === currentUserId
+          ? "Você fez check-in na aula"
+          : "Check-in realizado com sucesso para o aluno";
+
+      return reply.status(200).send({ message });
     }
   );
 };
