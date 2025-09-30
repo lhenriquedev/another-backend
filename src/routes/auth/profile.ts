@@ -27,13 +27,13 @@ export const profileRoute: FastifyPluginAsyncZod = async (server) => {
     async (request, reply) => {
       const user = getAuthenticatedUserFromRequest(request);
 
-      const result = await db
+      const [currentUser] = await db
         .select()
         .from(users)
         .where(eq(users.id, user.sub));
 
-      if (result.length > 0) {
-        return { user: result[0] };
+      if (currentUser) {
+        return { user: currentUser };
       }
 
       return reply.status(404).send();

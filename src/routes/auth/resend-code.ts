@@ -42,8 +42,12 @@ export const resendCodeRoute: FastifyPluginAsyncZod = async (server) => {
           )
         );
 
-      if (existingValidCode)
-        return reply.status(200).send({ message: "Código enviado" });
+      if (existingValidCode) {
+        return reply.status(200).send({
+          message:
+            "Um código válido já foi enviado anteriormente. Verifique sua caixa de entrada.",
+        });
+      }
 
       const newCode = generateNumericCode();
       const codeHash = await hash(newCode, 6);
@@ -57,7 +61,9 @@ export const resendCodeRoute: FastifyPluginAsyncZod = async (server) => {
 
       await resendVerificationEmail({ code: newCode, email, name: "teste" });
 
-      return reply.status(200).send({ message: "Código enviado" });
+      return reply
+        .status(200)
+        .send({ message: "Novo código enviado para seu email" });
     }
   );
 };

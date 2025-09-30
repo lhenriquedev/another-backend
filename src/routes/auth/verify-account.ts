@@ -51,12 +51,11 @@ export const verifyAccountRoute: FastifyPluginAsyncZod = async (server) => {
         return reply.status(400).send({ message: "Código inválido" });
       }
 
-      if (verification.expiresAt <= now) {
-        return reply.status(400).send({ message: "Código expirado" });
-      }
-
       await db.transaction(async (tx) => {
-        await tx.update(emailConfirmations).set({ isConsumed: true });
+        await tx
+          .update(emailConfirmations)
+          .set({ isConsumed: true })
+          .where(eq(emailConfirmations.id, verification.id));
 
         await tx
           .update(users)

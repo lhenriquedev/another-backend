@@ -14,9 +14,8 @@ export const registerRoute: FastifyPluginAsyncZod = async (server) => {
       schema: {
         body: z.object({
           email: z.email(),
-          password: z.string(),
+          password: z.string().min(8),
           name: z.string(),
-          role: z.enum(["admin", "student"]).default("student"),
           beltId: z.uuid(),
         }),
         response: {
@@ -26,7 +25,7 @@ export const registerRoute: FastifyPluginAsyncZod = async (server) => {
       },
     },
     async (request, reply) => {
-      const { email, password, role, name, beltId } = request.body;
+      const { email, password, name, beltId } = request.body;
 
       const result = await db
         .select()
@@ -45,7 +44,6 @@ export const registerRoute: FastifyPluginAsyncZod = async (server) => {
           email,
           name,
           password: passwordHash,
-          role,
           isActive: false,
           beltId,
         })
