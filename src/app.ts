@@ -1,20 +1,20 @@
 import fastify from "fastify";
+import { cancelCheckinRoute } from "./routes/checkin/cancel-checkin.ts";
+import { createCheckinRoute } from "./routes/checkin/create-checkin.ts";
+import { createClassRoute } from "./routes/classes/create-class.ts";
+import { getClassRoute } from "./routes/classes/get-classes.ts";
 import { loginRoute } from "./routes/auth/login.ts";
 import { profileRoute } from "./routes/auth/profile.ts";
 import { registerRoute } from "./routes/auth/register.ts";
 import { resendCodeRoute } from "./routes/auth/resend-code.ts";
 import { verifyAccountRoute } from "./routes/auth/verify-account.ts";
+import { ZodError } from "zod";
 
 import {
   validatorCompiler,
   serializerCompiler,
   type ZodTypeProvider,
 } from "fastify-type-provider-zod";
-import { ZodError } from "zod";
-import { createClassRoute } from "./routes/classes/create-class.ts";
-import { getClassRoute } from "./routes/classes/get-classes.ts";
-import { createCheckinRoute } from "./routes/checkin/create-checkin.ts";
-import { cancelCheckinRoute } from "./routes/checkin/cancel-checkin.ts";
 
 const app = fastify().withTypeProvider<ZodTypeProvider>();
 

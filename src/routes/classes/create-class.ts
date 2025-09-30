@@ -4,9 +4,8 @@ import { checkRequestJWT } from "../../hooks/check-request-jwt.ts";
 import { checkUserRole } from "../../hooks/check-user-role.ts";
 import { db } from "../../database/client.ts";
 import { eq } from "drizzle-orm";
-import { format } from "date-fns";
-import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import { fromZonedTime } from "date-fns-tz";
+import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 
 export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
   server.post(

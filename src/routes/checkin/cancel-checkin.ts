@@ -1,17 +1,20 @@
 import z, { uuid } from "zod";
+import { and, eq } from "drizzle-orm";
 import { checkins, classes, users } from "../../database/schema.ts";
-import { db } from "../../database/client.ts";
-import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import { checkRequestJWT } from "../../hooks/check-request-jwt.ts";
 import { checkUserRole } from "../../hooks/check-user-role.ts";
-import { and, eq } from "drizzle-orm";
+import { db } from "../../database/client.ts";
 import { getAuthenticatedUserFromRequest } from "../../utils/get-authenticated-user-from-request.ts";
+import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 
 export const cancelCheckinRoute: FastifyPluginAsyncZod = async (server) => {
   server.patch(
     "/cancel-checkin",
     {
-      preHandler: [checkRequestJWT, checkUserRole(["instructor", "admin"])],
+      preHandler: [
+        checkRequestJWT,
+        checkUserRole(["instructor", "admin", "student"]),
+      ],
       schema: {
         body: z.object({ classId: uuid() }),
         response: {

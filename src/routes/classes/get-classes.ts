@@ -1,11 +1,11 @@
 import z from "zod";
-import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
+import { and, eq, sql, SQL } from "drizzle-orm";
+import { checkins, classes, users } from "../../database/schema.ts";
 import { checkRequestJWT } from "../../hooks/check-request-jwt.ts";
 import { checkUserRole } from "../../hooks/check-user-role.ts";
 import { db } from "../../database/client.ts";
-import { checkins, classes, users } from "../../database/schema.ts";
-import { and, count, eq, sql, SQL } from "drizzle-orm";
-import { formatInTimeZone, toZonedTime } from "date-fns-tz";
+import { toZonedTime } from "date-fns-tz";
+import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 
 export const getClassRoute: FastifyPluginAsyncZod = async (server) => {
   server.get(
@@ -39,6 +39,7 @@ export const getClassRoute: FastifyPluginAsyncZod = async (server) => {
 
       const whereClause =
         conditions.length > 0 ? and(...conditions) : undefined;
+
       const [classesData, usersInClass, total] = await Promise.all([
         db
           .select({
@@ -68,7 +69,6 @@ export const getClassRoute: FastifyPluginAsyncZod = async (server) => {
           .innerJoin(users, eq(users.id, checkins.userId)),
         db.$count(classes, whereClause),
       ]);
-      const TIMEZONE = "America/Sao_Paulo";
 
       const result = classesData.map((_class) => {
         const timeZone = "America/Sao_Paulo";
