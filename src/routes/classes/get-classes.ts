@@ -10,7 +10,7 @@ import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 
 export const getClassRoute: FastifyPluginAsyncZod = async (server) => {
   server.get(
-    "/get-classes",
+    "/classes",
     {
       preHandler: [
         checkRequestJWT,
@@ -30,17 +30,38 @@ export const getClassRoute: FastifyPluginAsyncZod = async (server) => {
             .string()
             .regex(/^\d{4}-\d{2}-\d{2}$/)
             .optional(),
+          categoryId: z.uuid().optional(),
           status: z.enum(["not-started", "in-progress", "finished"]).optional(),
-          cursor: z.string().uuid().optional(),
+          cursor: z.uuid().optional(),
           limit: z.coerce.number().min(1).max(100).default(20),
           order: z.enum(["asc", "desc"]).default("asc"),
         }),
         response: {
           200: z.object({
-            classes: z.array(z.any()),
+            classes: z.array(
+              z.object({
+                id: z.string(),
+                title: z.string().nullable(),
+                description: z.string().nullable(),
+                date: z.string(),
+                startTime: z.string(),
+                endTime: z.string(),
+                capacity: z.number(),
+                status: z.enum(["not-started", "in-progress", "finished"]),
+                instructor: z.object({ id: z.string(), name: z.string() }),
+                category: z.object({
+                  id: z.string().nullable(),
+                  type: z.string().nullable(),
+                }),
+                checkinsSummary: z.object({
+                  total: z.number(),
+                  available: z.number(),
+                }),
+              })
+            ),
             pagination: z.object({
               hasMore: z.boolean(),
-              nextCursor: z.string().uuid().nullable(),
+              nextCursor: z.uuid().nullable(),
               total: z.number(),
             }),
           }),
@@ -49,8 +70,16 @@ export const getClassRoute: FastifyPluginAsyncZod = async (server) => {
       },
     },
     async (request, reply) => {
-      const { date, startDate, endDate, status, cursor, limit, order } =
-        request.query;
+      const {
+        date,
+        startDate,
+        endDate,
+        status,
+        cursor,
+        limit,
+        order,
+        categoryId,
+      } = request.query;
 
       if (date && (startDate || endDate)) {
         return reply.status(400).send({
@@ -117,6 +146,12 @@ export const getClassRoute: FastifyPluginAsyncZod = async (server) => {
         filterConditions.push(sql<boolean>`${classes.endTime} <= ${now}`);
       }
 
+      if (categoryId) {
+        filterConditions.push(
+          sql<boolean>`${classes.categoryId} = ${categoryId}`
+        );
+      }
+
       const filterWhereClause =
         filterConditions.length > 0 ? and(...filterConditions) : undefined;
 
@@ -166,12 +201,14 @@ export const getClassRoute: FastifyPluginAsyncZod = async (server) => {
           endTime: classes.endTime,
           capacity: classes.capacity,
           instructorId: classes.instructorId,
+          instructorName: users.name,
           categoryId: classes.categoryId,
           categoryType: categories.type,
           categoryDescription: categories.description,
         })
         .from(classes)
         .leftJoin(categories, eq(categories.id, classes.categoryId))
+        .innerJoin(users, eq(users.id, classes.instructorId))
         .where(paginationWhereClause)
         .orderBy(
           order === "asc" ? asc(classes.startTime) : desc(classes.startTime),
@@ -196,7 +233,6 @@ export const getClassRoute: FastifyPluginAsyncZod = async (server) => {
         checkinStatus: "done" | "pending" | "cancelled" | null;
       }> = [];
 
-      // Aqui está a mudança crucial: usar inArray em vez de ANY
       if (classIds.length > 0) {
         usersInClass = await db
           .select({
@@ -207,14 +243,12 @@ export const getClassRoute: FastifyPluginAsyncZod = async (server) => {
           })
           .from(checkins)
           .innerJoin(users, eq(users.id, checkins.userId))
-          // Trocar sql`...` por inArray que o Drizzle fornece
           .where(inArray(checkins.classId, classIds))
           .orderBy(users.name);
       }
 
       let checkinCounts: Array<{ classId: string; count: number }> = [];
 
-      // Mesma mudança aqui para a query de contagem de check-ins
       if (classIds.length > 0) {
         checkinCounts = await db
           .select({
@@ -224,7 +258,6 @@ export const getClassRoute: FastifyPluginAsyncZod = async (server) => {
           .from(checkins)
           .where(
             and(
-              // Usar inArray aqui também
               inArray(checkins.classId, classIds),
               sql<boolean>`${checkins.status} != 'cancelled'`
             )
@@ -235,26 +268,6 @@ export const getClassRoute: FastifyPluginAsyncZod = async (server) => {
       const checkinCountMap = new Map(
         checkinCounts.map((item) => [item.classId, item.count])
       );
-
-      const usersMap = new Map<
-        string,
-        Array<{
-          id: string;
-          name: string;
-          checkinStatus: "done" | "pending" | "cancelled" | null;
-        }>
-      >();
-
-      for (const user of usersInClass) {
-        if (!usersMap.has(user.classId)) {
-          usersMap.set(user.classId, []);
-        }
-        usersMap.get(user.classId)!.push({
-          id: user.userId,
-          name: user.userName,
-          checkinStatus: user.checkinStatus,
-        });
-      }
 
       const result = classesToReturn.map((_class) => {
         const startTime = toZonedTime(new Date(_class.startTime), timeZone);
@@ -270,23 +283,33 @@ export const getClassRoute: FastifyPluginAsyncZod = async (server) => {
           classStatus = "finished";
         }
 
+        const totalCheckins = checkinCountMap.get(_class.id) || 0;
+
+        if (!_class.instructorId || !_class.instructorName) {
+          throw new Error(`Aula ${_class.id} está sem instrutor válido`);
+        }
+
         return {
           id: _class.id,
           title: _class.title,
           description: _class.description,
           date: _class.date,
-          startTime: _class.startTime,
-          endTime: _class.endTime,
+          startTime: _class.startTime.toISOString(), // Converter Date para string
+          endTime: _class.endTime.toISOString(), // Converter Date para string
           capacity: _class.capacity,
-          instructorId: _class.instructorId,
           status: classStatus,
-          totalCheckins: checkinCountMap.get(_class.id) || 0,
+          instructor: {
+            id: _class.instructorId, // Agora existe no select
+            name: _class.instructorName,
+          },
           category: {
             id: _class.categoryId,
             type: _class.categoryType,
-            description: _class.categoryDescription,
           },
-          checkins: usersMap.get(_class.id) || [],
+          checkinsSummary: {
+            total: totalCheckins,
+            available: _class.capacity - totalCheckins,
+          },
         };
       });
 
