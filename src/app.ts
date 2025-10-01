@@ -16,6 +16,7 @@ import {
   type ZodTypeProvider,
 } from "fastify-type-provider-zod";
 import { confirmCheckinRoute } from "./routes/checkin/confirm-checkin.ts";
+import { getClassByIdRoute } from "./routes/classes/get-class-by-id.ts";
 
 const app = fastify().withTypeProvider<ZodTypeProvider>();
 
@@ -29,6 +30,7 @@ app.register(verifyAccountRoute);
 app.register(resendCodeRoute);
 app.register(createClassRoute);
 app.register(getClassRoute);
+app.register(getClassByIdRoute);
 app.register(createCheckinRoute);
 app.register(cancelCheckinRoute);
 app.register(confirmCheckinRoute);
