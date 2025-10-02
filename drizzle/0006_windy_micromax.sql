@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "classesCompletedInCurrentBelt" integer DEFAULT 0 NOT NULL;

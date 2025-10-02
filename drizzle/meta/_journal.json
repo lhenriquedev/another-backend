@@ -36,6 +36,20 @@
       "when": 1759186123400,
       "tag": "0004_public_mole_man",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1759426603408,
+      "tag": "0005_nice_lucky_pierre",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1759427754258,
+      "tag": "0006_windy_micromax",
+      "breakpoints": true
     }
   ]
 }

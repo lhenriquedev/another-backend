@@ -8,7 +8,6 @@ import {
   timestamp,
   integer,
   date,
-  time,
   uniqueIndex,
   check,
 } from "drizzle-orm/pg-core";
@@ -39,7 +38,6 @@ export const categoryRole = pgEnum("category_role", [
 // ]);
 
 export const checkinStatus = pgEnum("checkin_status", [
-  "pending",
   "done",
   "cancelled",
 ]);
@@ -55,6 +53,8 @@ export const users = pgTable("users", {
   beltId: uuid()
     .notNull()
     .references(() => belts.id),
+  classesCompletedInCurrentBelt: integer().notNull().default(0),
+
 
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow(),
@@ -108,9 +108,8 @@ export const checkins = pgTable(
     classId: uuid()
       .notNull()
       .references(() => classes.id, { onDelete: "cascade" }),
-    done: boolean().default(false),
     completedAt: timestamp().defaultNow(),
-    status: checkinStatus().default("pending"),
+    status: checkinStatus().default("done"),
 
     createdAt: timestamp().defaultNow(),
   },

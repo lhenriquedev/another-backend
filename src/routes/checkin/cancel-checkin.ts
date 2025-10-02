@@ -1,12 +1,12 @@
 import z, { uuid } from "zod";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { checkins, classes, users } from "../../database/schema.ts";
 import { checkRequestJWT } from "../../hooks/check-request-jwt.ts";
 import { checkUserRole } from "../../hooks/check-user-role.ts";
 import { db } from "../../database/client.ts";
 import { getAuthenticatedUserFromRequest } from "../../utils/get-authenticated-user-from-request.ts";
-import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import { getClassStatus } from "../../utils/get-class-status.ts";
+import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 
 export const cancelCheckinRoute: FastifyPluginAsyncZod = async (server) => {
   server.patch(
@@ -17,7 +17,10 @@ export const cancelCheckinRoute: FastifyPluginAsyncZod = async (server) => {
         checkUserRole(["instructor", "admin", "student"]),
       ],
       schema: {
-        body: z.object({ classId: uuid(), userId: uuid().optional() }),
+        body: z.object({
+          classId: uuid(),
+          userId: uuid().optional(),
+        }),
         response: {
           200: z.object({ message: z.string() }),
           400: z.object({ message: z.string() }),
@@ -46,7 +49,10 @@ export const cancelCheckinRoute: FastifyPluginAsyncZod = async (server) => {
       const [existingCheckin] = await db
         .select()
         .from(checkins)
-        .where(and(eq(checkins.userId, userId), eq(checkins.classId, classId)));
+        .where(and(
+          eq(checkins.userId, userId),
+          eq(checkins.classId, classId)
+        ));
 
       if (!existingCheckin) {
         return reply.status(400).send({ message: "Check-in não encontrado" });
@@ -61,13 +67,12 @@ export const cancelCheckinRoute: FastifyPluginAsyncZod = async (server) => {
         currentUserId === classData.instructorId;
 
       const isAdmin = currentUserRole === "admin";
-
       const hasSpecialPermission = isInstructorOfClass || isAdmin;
 
       if (!hasSpecialPermission) {
         if (userId !== currentUserId) {
           return reply.status(403).send({
-            message: "Você só pode cancelar seu próprio check-in",
+            message: "Você só pode cancelar seu próprio check-in"
           });
         }
 
@@ -78,20 +83,45 @@ export const cancelCheckinRoute: FastifyPluginAsyncZod = async (server) => {
 
         if (status !== "not-started") {
           return reply.status(400).send({
-            message: "Não é possível cancelar check-in após o início da aula",
+            message: "Não é possível cancelar check-in após o início da aula"
           });
         }
       }
 
-      await db
-        .update(checkins)
-        .set({ status: "cancelled", done: false, completedAt: null })
-        .where(and(eq(checkins.userId, userId), eq(checkins.classId, classId)));
+      const [targetUser] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId));
 
-      const message =
-        userId === currentUserId
-          ? "Check-in cancelado com sucesso"
-          : "Check-in do aluno cancelado com sucesso";
+      if (!targetUser) {
+        return reply.status(400).send({ message: "Usuário não encontrado" });
+      }
+
+      await db.transaction(async (tx) => {
+        await tx
+          .update(checkins)
+          .set({
+            status: "cancelled",
+            completedAt: null,
+          })
+          .where(and(
+            eq(checkins.userId, userId),
+            eq(checkins.classId, classId)
+          ));
+
+        if (targetUser.role === "student") {
+          await tx
+            .update(users)
+            .set({
+              classesCompletedInCurrentBelt: sql`GREATEST(${users.classesCompletedInCurrentBelt} - 1, 0)`,
+            })
+            .where(eq(users.id, userId));
+        }
+      });
+
+      const message = userId === currentUserId
+        ? "Check-in cancelado com sucesso"
+        : "Check-in do aluno cancelado com sucesso";
 
       return reply.status(200).send({ message });
     }

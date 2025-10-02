@@ -15,7 +15,6 @@ import {
   serializerCompiler,
   type ZodTypeProvider,
 } from "fastify-type-provider-zod";
-import { confirmCheckinRoute } from "./routes/checkin/confirm-checkin.ts";
 import { getClassByIdRoute } from "./routes/classes/get-class-by-id.ts";
 
 const app = fastify().withTypeProvider<ZodTypeProvider>();
@@ -33,7 +32,6 @@ app.register(getClassRoute);
 app.register(getClassByIdRoute);
 app.register(createCheckinRoute);
 app.register(cancelCheckinRoute);
-app.register(confirmCheckinRoute);
 
 app.setErrorHandler((error, _, reply) => {
   if (error instanceof ZodError) {
