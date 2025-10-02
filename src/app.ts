@@ -7,7 +7,7 @@ import { loginRoute } from "./routes/auth/login.ts";
 import { profileRoute } from "./routes/auth/profile.ts";
 import { registerRoute } from "./routes/auth/register.ts";
 import { resendCodeRoute } from "./routes/auth/resend-code.ts";
-import { verifyAccountRoute } from "./routes/auth/verify-account.ts";
+import { activateAccountRoute } from "./routes/auth/activate-account.ts";
 import { ZodError } from "zod";
 
 import {
@@ -25,7 +25,7 @@ app.setSerializerCompiler(serializerCompiler);
 app.register(registerRoute);
 app.register(loginRoute);
 app.register(profileRoute);
-app.register(verifyAccountRoute);
+app.register(activateAccountRoute);
 app.register(resendCodeRoute);
 app.register(createClassRoute);
 app.register(getClassRoute);

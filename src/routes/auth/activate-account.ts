@@ -5,9 +5,9 @@ import { db } from "../../database/client";
 import { emailConfirmations, users } from "../../database/schema";
 import { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 
-export const verifyAccountRoute: FastifyPluginAsyncZod = async (server) => {
+export const activateAccountRoute: FastifyPluginAsyncZod = async (server) => {
   server.post(
-    "/verify-account",
+    "/activate-account",
     {
       schema: {
         body: z.object({

@@ -18,6 +18,9 @@ export const profileRoute: FastifyPluginAsyncZod = async (server) => {
               name: z.string(),
               email: z.string(),
               role: z.string(),
+              isActive: z.boolean(),
+              beltId: z.uuid(),
+              classesCompletedInCurrentBelt: z.number()
             }),
           }),
           404: z.null().describe("User profile not found"),
