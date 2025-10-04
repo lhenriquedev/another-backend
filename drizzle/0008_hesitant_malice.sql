@@ -1,0 +1,1 @@
+CREATE INDEX "checkins_user_status_date_idx" ON "checkins" USING btree ("userId","status","completedAt");

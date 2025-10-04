@@ -50,6 +50,20 @@
       "when": 1759427754258,
       "tag": "0006_windy_micromax",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1759615244248,
+      "tag": "0007_confused_maelstrom",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1759615307409,
+      "tag": "0008_hesitant_malice",
+      "breakpoints": true
     }
   ]
 }

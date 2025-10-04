@@ -10,6 +10,7 @@ import {
   date,
   uniqueIndex,
   check,
+  index,
 } from "drizzle-orm/pg-core";
 
 export const userRole = pgEnum("user_role", ["admin", "student", "instructor"]);
@@ -37,28 +38,30 @@ export const categoryRole = pgEnum("category_role", [
 //   "not-started",
 // ]);
 
-export const checkinStatus = pgEnum("checkin_status", [
-  "done",
-  "cancelled",
-]);
+export const checkinStatus = pgEnum("checkin_status", ["done", "cancelled"]);
 
-export const users = pgTable("users", {
-  id: uuid().primaryKey().defaultRandom(),
-  name: text().notNull(),
-  email: text().notNull().unique(),
-  password: text().notNull(),
-  role: userRole().notNull().default("student"),
-  isActive: boolean().notNull().default(false),
+export const users = pgTable(
+  "users",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    name: text().notNull(),
+    email: text().notNull().unique(),
+    password: text().notNull(),
+    role: userRole().notNull().default("student"),
+    isActive: boolean().notNull().default(false),
 
-  beltId: uuid()
-    .notNull()
-    .references(() => belts.id),
-  classesCompletedInCurrentBelt: integer().notNull().default(0),
+    beltId: uuid()
+      .notNull()
+      .references(() => belts.id),
+    classesCompletedInCurrentBelt: integer().notNull().default(0),
 
-
-  createdAt: timestamp().notNull().defaultNow(),
-  updatedAt: timestamp().notNull().defaultNow(),
-});
+    createdAt: timestamp().notNull().defaultNow(),
+    updatedAt: timestamp().notNull().defaultNow(),
+  },
+  (table) => ({
+    beltIdIdx: index("users_belt_id_idx").on(table.beltId),
+  })
+);
 
 export const belts = pgTable("belts", {
   id: uuid().primaryKey().defaultRandom(),
@@ -113,7 +116,14 @@ export const checkins = pgTable(
 
     createdAt: timestamp().defaultNow(),
   },
-  (table) => [uniqueIndex().on(table.userId, table.classId)]
+  (table) => [
+    uniqueIndex().on(table.userId, table.classId),
+    index("checkins_user_status_date_idx").on(
+      table.userId,
+      table.status,
+      table.completedAt
+    ),
+  ]
 );
 
 export const emailConfirmations = pgTable("email_confirmations", {

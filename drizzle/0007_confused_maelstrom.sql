@@ -1,0 +1,1 @@
+CREATE INDEX "users_belt_id_idx" ON "users" USING btree ("beltId");

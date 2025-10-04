@@ -1,5 +1,5 @@
 import z from "zod";
-import { and, eq, sql, desc, asc, inArray, SQL } from "drizzle-orm"; // Adicionar inArray aqui
+import { eq, } from "drizzle-orm"; // Adicionar inArray aqui
 import {
   checkins,
   classes,
@@ -10,8 +10,7 @@ import {
 import { checkRequestJWT } from "../../hooks/check-request-jwt.ts";
 import { checkUserRole } from "../../hooks/check-user-role.ts";
 import { db } from "../../database/client.ts";
-import { parseISO, startOfDay, endOfDay } from "date-fns";
-import { toZonedTime, fromZonedTime } from "date-fns-tz";
+
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import { getClassStatus } from "../../utils/get-class-status.ts";
 
@@ -95,9 +94,7 @@ export const getClassByIdRoute: FastifyPluginAsyncZod = async (server) => {
       const totalCheckins = students.filter(
         (s) => s.checkin.status !== "cancelled"
       ).length;
-      const pendingCheckins = students.filter(
-        (s) => s.checkin.status === "pending"
-      ).length;
+
       const completedCheckins = students.filter(
         (s) => s.checkin.status === "done"
       ).length;
@@ -135,7 +132,6 @@ export const getClassByIdRoute: FastifyPluginAsyncZod = async (server) => {
         students,
         statistics: {
           totalCheckins,
-          pendingCheckins,
           completedCheckins,
           cancelledCheckins,
           availableSpots,
