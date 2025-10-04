@@ -19,7 +19,7 @@ export const createCheckinRoute: FastifyPluginAsyncZod = async (server) => {
       schema: {
         body: z.object({
           classId: uuid(),
-          userId: uuid().optional()
+          userId: uuid().optional(),
         }),
         response: {
           200: z.object({ message: z.string() }),
@@ -62,7 +62,7 @@ export const createCheckinRoute: FastifyPluginAsyncZod = async (server) => {
       if (!hasSpecialPermission) {
         if (userId !== currentUserId) {
           return reply.status(403).send({
-            message: "Você só pode fazer check-in para si mesmo"
+            message: "Você só pode fazer check-in para si mesmo",
           });
         }
 
@@ -84,17 +84,14 @@ export const createCheckinRoute: FastifyPluginAsyncZod = async (server) => {
 
       if (!targetUser.isActive) {
         return reply.status(400).send({
-          message: "Não é possível fazer check-in de usuário inativo"
+          message: "Não é possível fazer check-in de usuário inativo",
         });
       }
 
       const [existingCheckin] = await db
         .select()
         .from(checkins)
-        .where(and(
-          eq(checkins.userId, userId),
-          eq(checkins.classId, classId)
-        ));
+        .where(and(eq(checkins.userId, userId), eq(checkins.classId, classId)));
 
       if (existingCheckin) {
         if (existingCheckin.status === "cancelled") {
@@ -103,7 +100,7 @@ export const createCheckinRoute: FastifyPluginAsyncZod = async (server) => {
               .update(checkins)
               .set({
                 status: "done",
-                completedAt: new Date()
+                completedAt: new Date(),
               })
               .where(eq(checkins.id, existingCheckin.id));
 
@@ -111,7 +108,7 @@ export const createCheckinRoute: FastifyPluginAsyncZod = async (server) => {
               await tx
                 .update(users)
                 .set({
-                  classesCompletedInCurrentBelt: sql`${users.classesCompletedInCurrentBelt} + 1`
+                  classesCompletedInCurrentBelt: sql`${users.classesCompletedInCurrentBelt} + 1`,
                 })
                 .where(eq(users.id, userId));
             }
@@ -136,7 +133,7 @@ export const createCheckinRoute: FastifyPluginAsyncZod = async (server) => {
 
       if (totalCheckins >= classData.capacity) {
         return reply.status(409).send({
-          message: "Capacidade da aula já foi atingida"
+          message: "Capacidade da aula já foi atingida",
         });
       }
 
@@ -145,22 +142,21 @@ export const createCheckinRoute: FastifyPluginAsyncZod = async (server) => {
           userId,
           classId,
           status: "done",
-          completedAt: new Date()
+          completedAt: new Date(),
         });
 
-        if (targetUser.role === "student") {
-          await tx
-            .update(users)
-            .set({
-              classesCompletedInCurrentBelt: sql`${users.classesCompletedInCurrentBelt} + 1`,
-            })
-            .where(eq(users.id, userId));
-        }
+        await tx
+          .update(users)
+          .set({
+            classesCompletedInCurrentBelt: sql`${users.classesCompletedInCurrentBelt} + 1`,
+          })
+          .where(eq(users.id, userId));
       });
 
-      const message = userId === currentUserId
-        ? "Você fez check-in na aula"
-        : "Check-in realizado com sucesso para o aluno";
+      const message =
+        userId === currentUserId
+          ? "Você fez check-in na aula"
+          : "Check-in realizado com sucesso para o aluno";
 
       return reply.status(200).send({ message });
     }
