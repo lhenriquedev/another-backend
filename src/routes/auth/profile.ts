@@ -20,7 +20,6 @@ export const profileRoute: FastifyPluginAsyncZod = async (server) => {
               email: z.string(),
               isActive: z.boolean(),
               belt: z.string(),
-              classesCompletedInCurrentBelt: z.number(),
               requiredClassesInCurrentBelt: z.number(),
               checkinsThisMonth: z.number(),
             }),
@@ -44,7 +43,6 @@ export const profileRoute: FastifyPluginAsyncZod = async (server) => {
             name: users.name,
             email: users.email,
             isActive: users.isActive,
-            classesCompletedInCurrentBelt: users.classesCompletedInCurrentBelt,
             requiredClassesInCurrentBelt: belts.requiredClasses,
           })
           .from(users)

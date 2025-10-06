@@ -95,24 +95,13 @@ export const createCheckinRoute: FastifyPluginAsyncZod = async (server) => {
 
       if (existingCheckin) {
         if (existingCheckin.status === "cancelled") {
-          await db.transaction(async (tx) => {
-            await tx
-              .update(checkins)
-              .set({
-                status: "done",
-                completedAt: new Date(),
-              })
-              .where(eq(checkins.id, existingCheckin.id));
-
-            if (targetUser.role === "student") {
-              await tx
-                .update(users)
-                .set({
-                  classesCompletedInCurrentBelt: sql`${users.classesCompletedInCurrentBelt} + 1`,
-                })
-                .where(eq(users.id, userId));
-            }
-          });
+          await db
+            .update(checkins)
+            .set({
+              status: "done",
+              completedAt: new Date(),
+            })
+            .where(eq(checkins.id, existingCheckin.id));
 
           return reply.status(200).send({
             message: "Check-in reativado com sucesso",
@@ -137,20 +126,11 @@ export const createCheckinRoute: FastifyPluginAsyncZod = async (server) => {
         });
       }
 
-      await db.transaction(async (tx) => {
-        await tx.insert(checkins).values({
-          userId,
-          classId,
-          status: "done",
-          completedAt: new Date(),
-        });
-
-        await tx
-          .update(users)
-          .set({
-            classesCompletedInCurrentBelt: sql`${users.classesCompletedInCurrentBelt} + 1`,
-          })
-          .where(eq(users.id, userId));
+      await db.insert(checkins).values({
+        userId,
+        classId,
+        status: "done",
+        completedAt: new Date(),
       });
 
       const message =

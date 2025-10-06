@@ -97,27 +97,16 @@ export const cancelCheckinRoute: FastifyPluginAsyncZod = async (server) => {
         return reply.status(400).send({ message: "Usuário não encontrado" });
       }
 
-      await db.transaction(async (tx) => {
-        await tx
-          .update(checkins)
-          .set({
-            status: "cancelled",
-            completedAt: null,
-          })
-          .where(and(
-            eq(checkins.userId, userId),
-            eq(checkins.classId, classId)
-          ));
-
-        if (targetUser.role === "student") {
-          await tx
-            .update(users)
-            .set({
-              classesCompletedInCurrentBelt: sql`GREATEST(${users.classesCompletedInCurrentBelt} - 1, 0)`,
-            })
-            .where(eq(users.id, userId));
-        }
-      });
+      await db
+        .update(checkins)
+        .set({
+          status: "cancelled",
+          completedAt: null,
+        })
+        .where(and(
+          eq(checkins.userId, userId),
+          eq(checkins.classId, classId)
+        ));
 
       const message = userId === currentUserId
         ? "Check-in cancelado com sucesso"

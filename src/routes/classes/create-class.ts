@@ -4,9 +4,8 @@ import { checkRequestJWT } from "../../hooks/check-request-jwt.ts";
 import { checkUserRole } from "../../hooks/check-user-role.ts";
 import { db } from "../../database/client.ts";
 import { eq } from "drizzle-orm";
-import { fromZonedTime, toZonedTime } from "date-fns-tz";
+import { fromZonedTime } from "date-fns-tz";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
-import { isBefore, parseISO, startOfDay } from "date-fns";
 
 export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
   server.post(
@@ -25,10 +24,7 @@ export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
             categoryId: z.uuid(),
             capacity: z.coerce.number().default(10),
           })
-          .refine((v) => v.startTime < v.endTime, {
-            message: "startTime deve ser menor que endTime",
-            path: ["startTime"],
-          }),
+        ,
         response: {
           200: z.object({ id: z.string(), message: z.string() }),
           400: z.object({ message: z.string() }),
@@ -49,15 +45,6 @@ export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
 
       const timezone = "America/Sao_Paulo";
 
-      const classDate = parseISO(date);
-      const today = startOfDay(toZonedTime(new Date(), timezone));
-
-      if (isBefore(classDate, today)) {
-        return reply.status(400).send({
-          message: "Não é possível criar aulas em datas passadas",
-        });
-      }
-
       const [instructor] = await db
         .select()
         .from(users)
@@ -71,7 +58,7 @@ export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
 
       if (instructor.role === "student") {
         return reply.status(400).send({
-          message: "Usuário especificado não é um instrutor ",
+          message: "Usuário especificado não é um instrutor",
         });
       }
 
@@ -86,29 +73,28 @@ export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
         });
       }
 
-      // Aqui vem a parte crucial: construir os timestamps corretamente
-      // Separar horas e minutos dos horários fornecidos
-      const [startHour, startMinute] = startTime.split(":").map(Number);
-      const [endHour, endMinute] = endTime.split(":").map(Number);
 
-      // Criar objetos Date com a data fornecida e os horários
-      // Esses objetos representam momentos no timezone de São Paulo
-      const startDateTime = new Date(classDate);
-      startDateTime.setHours(startHour, startMinute, 0, 0);
+      const startDateTimeString = `${date}T${startTime}:00`;
+      const endDateTimeString = `${date}T${endTime}:00`;
 
-      const endDateTime = new Date(classDate);
-      endDateTime.setHours(endHour, endMinute, 0, 0);
+      const startTimeUTC = fromZonedTime(startDateTimeString, timezone);
+      const endTimeUTC = fromZonedTime(endDateTimeString, timezone);
 
-      if (startDateTime >= endDateTime) {
+      if (startTimeUTC >= endTimeUTC) {
         return reply.status(400).send({
           message: "Horário de início deve ser anterior ao horário de término",
         });
       }
 
-      const startTimeUTC = fromZonedTime(startDateTime, timezone);
-      const endTimeUTC = fromZonedTime(endDateTime, timezone);
 
       const now = new Date();
+
+      if (startTimeUTC < now) {
+        return reply.status(400).send({
+          message: "Não é possível criar aulas com horário de início no passado",
+        });
+      }
+
       let initialStatus: "not-started" | "in-progress" | "finished";
 
       if (now < startTimeUTC) {
@@ -124,9 +110,9 @@ export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
         .values({
           title,
           description,
-          date, // Mantém a data como string no formato yyyy-MM-dd
-          startTime: startTimeUTC, // Timestamp em UTC
-          endTime: endTimeUTC, // Timestamp em UTC
+          date,
+          startTime: startTimeUTC,
+          endTime: endTimeUTC,
           instructorId,
           categoryId,
           capacity,

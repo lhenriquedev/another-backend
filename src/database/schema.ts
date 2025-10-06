@@ -53,7 +53,6 @@ export const users = pgTable(
     beltId: uuid()
       .notNull()
       .references(() => belts.id),
-    classesCompletedInCurrentBelt: integer().notNull().default(0),
 
     createdAt: timestamp().notNull().defaultNow(),
     updatedAt: timestamp().notNull().defaultNow(),
@@ -97,6 +96,11 @@ export const classes = pgTable(
   (table) => [
     check("capacity_check", sql`${table.capacity} >= 0`),
     check("timeOrder_check", sql`${table.startTime} < ${table.endTime}`),
+    index("classes_start_time_id_idx").on(table.startTime, table.id),
+    index("classes_category_id_idx").on(table.categoryId),
+    index("classes_instructor_id_idx").on(table.instructorId),
+    index("classes_date_idx").on(table.date),
+    index("classes_end_time_idx").on(table.endTime),
   ]
 );
 
@@ -118,11 +122,9 @@ export const checkins = pgTable(
   },
   (table) => [
     uniqueIndex().on(table.userId, table.classId),
-    index("checkins_user_status_date_idx").on(
-      table.userId,
-      table.status,
-      table.completedAt
-    ),
+    index("checkins_user_status_idx").on(table.userId, table.status),
+    index("checkins_class_idx").on(table.classId),
+    index("checkins_completed_at_idx").on(table.completedAt),
   ]
 );
 
