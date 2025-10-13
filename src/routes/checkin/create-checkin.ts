@@ -1,11 +1,11 @@
-import z, { uuid } from "zod";
-import { and, eq, sql } from "drizzle-orm";
-import { checkins, classes, users } from "../../database/schema.ts";
-import { checkRequestJWT } from "../../hooks/check-request-jwt.ts";
-import { checkUserRole } from "../../hooks/check-user-role.ts";
-import { db } from "../../database/client.ts";
-import { getAuthenticatedUserFromRequest } from "../../utils/get-authenticated-user-from-request.ts";
-import { getClassStatus } from "../../utils/get-class-status.ts";
+import z, { uuid } from 'zod';
+import { and, eq, sql } from 'drizzle-orm';
+import { checkins, classes, users } from '../../database/schema.ts';
+import { checkRequestJWT } from '../../hooks/check-request-jwt.ts';
+import { checkUserRole } from '../../hooks/check-user-role.ts';
+import { db } from '../../database/client.ts';
+import { getAuthenticatedUserFromRequest } from '../../utils/get-authenticated-user-from-request.ts';
+import { getClassStatus } from '../../utils/get-class-status.ts';
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 
 export const createCheckinRoute: FastifyPluginAsyncZod = async (server) => {
@@ -60,17 +60,22 @@ export const createCheckinRoute: FastifyPluginAsyncZod = async (server) => {
       const hasSpecialPermission = isInstructorOfClass || isAdmin;
 
       if (!hasSpecialPermission) {
-        if (userId !== currentUserId) {
-          return reply.status(403).send({
-            message: "Você só pode fazer check-in para si mesmo",
-          });
-        }
+        return reply
+          .status(403)
+          .send({ message: "Você não tem permissão para fazer esta ação." });
+      }
 
-        if (status !== "not-started") {
-          return reply.status(400).send({
-            message: "Não é possível fazer check-in após o início da aula",
-          });
-        }
+      if (userId !== currentUserId) {
+        return reply.status(403).send({
+          message: "Você só pode fazer check-in para si mesmo",
+        });
+      }
+
+      if (status !== "not-started") {
+        return reply.status(400).send({
+          message:
+            "Não é possível fazer check-in após o início da aula ou a finalização",
+        });
       }
 
       const [targetUser] = await db

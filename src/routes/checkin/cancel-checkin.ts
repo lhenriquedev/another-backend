@@ -62,6 +62,11 @@ export const cancelCheckinRoute: FastifyPluginAsyncZod = async (server) => {
         return reply.status(400).send({ message: "Check-in já cancelado" });
       }
 
+      const status = getClassStatus({
+        startTime: classData.startTime,
+        endTime: classData.endTime,
+      });
+
       const isInstructorOfClass =
         currentUserRole === "instructor" &&
         currentUserId === classData.instructorId;
@@ -69,23 +74,24 @@ export const cancelCheckinRoute: FastifyPluginAsyncZod = async (server) => {
       const isAdmin = currentUserRole === "admin";
       const hasSpecialPermission = isInstructorOfClass || isAdmin;
 
+
       if (!hasSpecialPermission) {
-        if (userId !== currentUserId) {
-          return reply.status(403).send({
-            message: "Você só pode cancelar seu próprio check-in"
-          });
-        }
+        return reply
+          .status(403)
+          .send({ message: "Você não tem permissão para fazer esta ação." });
+      }
 
-        const status = getClassStatus({
-          startTime: classData.startTime,
-          endTime: classData.endTime,
+      if (userId !== currentUserId) {
+        return reply.status(403).send({
+          message: "Você só pode fazer check-in para si mesmo",
         });
+      }
 
-        if (status !== "not-started") {
-          return reply.status(400).send({
-            message: "Não é possível cancelar check-in após o início da aula"
-          });
-        }
+      if (status !== "not-started") {
+        return reply.status(400).send({
+          message:
+            "Não é possível fazer check-in após o início da aula ou a finalização",
+        });
       }
 
       const [targetUser] = await db

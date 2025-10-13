@@ -11,9 +11,10 @@ import {
   uniqueIndex,
   check,
   index,
+  varchar,
 } from "drizzle-orm/pg-core";
 
-export const userRole = pgEnum("user_role", ["admin", "student", "instructor"]);
+export const userRoleEnum = pgEnum("user_role", ["admin", "student", "instructor"]);
 export const beltEnum = pgEnum("belts_role", [
   "white",
   "blue",
@@ -21,7 +22,7 @@ export const beltEnum = pgEnum("belts_role", [
   "brown",
   "black",
 ]);
-export const categoryRole = pgEnum("category_role", [
+export const categoryEnum = pgEnum("category_role", [
   "Misto",
   "Kids I",
   "Kids II",
@@ -31,35 +32,28 @@ export const categoryRole = pgEnum("category_role", [
   "Avançado",
 ]);
 
-// export const statusRole = pgEnum("status_role", [
-//   "finished",
-//   "in-progress",
-//   "cancelled",
-//   "not-started",
-// ]);
-
 export const checkinStatus = pgEnum("checkin_status", ["done", "cancelled"]);
 
 export const users = pgTable(
   "users",
   {
     id: uuid().primaryKey().defaultRandom(),
-    name: text().notNull(),
-    email: text().notNull().unique(),
-    password: text().notNull(),
-    role: userRole().notNull().default("student"),
-    isActive: boolean().notNull().default(false),
+    name: varchar({ length: 255 }).notNull(),
+    email: varchar({ length: 255 }).notNull().unique(),
+    password: varchar({ length: 255 }).notNull(),
+    role: userRoleEnum().notNull().default("student"),
+    birthDate: date('birth_date', { mode: 'string' }).notNull(),
+    gender: varchar({ length: 6 }).notNull(),
+    phone: varchar({ length: 20 }),
 
+    isActive: boolean('is_active').notNull().default(false),
     beltId: uuid()
       .notNull()
       .references(() => belts.id),
 
-    createdAt: timestamp().notNull().defaultNow(),
-    updatedAt: timestamp().notNull().defaultNow(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
-  (table) => ({
-    beltIdIdx: index("users_belt_id_idx").on(table.beltId),
-  })
 );
 
 export const belts = pgTable("belts", {
@@ -71,7 +65,7 @@ export const belts = pgTable("belts", {
 
 export const categories = pgTable("categories", {
   id: uuid().primaryKey().defaultRandom(),
-  type: categoryRole().notNull(),
+  type: categoryEnum().notNull(),
   description: text(),
   createdAt: timestamp().defaultNow(),
 });
@@ -88,10 +82,10 @@ export const classes = pgTable(
     capacity: integer().notNull().default(0),
     // status: statusRole().default("not-started"),
 
-    instructorId: uuid().references(() => users.id),
-    categoryId: uuid().references(() => categories.id),
+    instructorId: uuid('instructor_id').references(() => users.id),
+    categoryId: uuid('category_id').references(() => categories.id),
 
-    createdAt: timestamp().defaultNow(),
+    createdAt: timestamp('created_at').defaultNow(),
   },
   (table) => [
     check("capacity_check", sql`${table.capacity} >= 0`),
@@ -109,16 +103,16 @@ export const checkins = pgTable(
   {
     id: uuid().primaryKey().defaultRandom(),
 
-    userId: uuid()
+    userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    classId: uuid()
+    classId: uuid('class_id')
       .notNull()
       .references(() => classes.id, { onDelete: "cascade" }),
-    completedAt: timestamp().defaultNow(),
+    completedAt: timestamp('completed_at').defaultNow(),
     status: checkinStatus().default("done"),
 
-    createdAt: timestamp().defaultNow(),
+    createdAt: timestamp('created_at').defaultNow(),
   },
   (table) => [
     uniqueIndex().on(table.userId, table.classId),
@@ -127,17 +121,3 @@ export const checkins = pgTable(
     index("checkins_completed_at_idx").on(table.completedAt),
   ]
 );
-
-export const emailConfirmations = pgTable("email_confirmations", {
-  id: uuid().primaryKey().defaultRandom(),
-
-  codeHash: text().notNull(),
-  expiresAt: timestamp().notNull(),
-  isConsumed: boolean().default(false),
-
-  userId: uuid()
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade", onUpdate: "cascade" }),
-
-  createdAt: timestamp().notNull().defaultNow(),
-});

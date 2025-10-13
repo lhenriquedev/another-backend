@@ -6,9 +6,9 @@ import { getClassRoute } from "./routes/classes/get-classes.ts";
 import { loginRoute } from "./routes/auth/login.ts";
 import { profileRoute } from "./routes/auth/profile.ts";
 import { registerRoute } from "./routes/auth/register.ts";
-import { resendCodeRoute } from "./routes/auth/resend-code.ts";
-import { activateAccountRoute } from "./routes/auth/activate-account.ts";
+
 import { ZodError } from "zod";
+import cors from "@fastify/cors"
 
 import {
   validatorCompiler,
@@ -19,17 +19,21 @@ import { getClassByIdRoute } from "./routes/classes/get-class-by-id.ts";
 
 const app = fastify().withTypeProvider<ZodTypeProvider>();
 
+app.register(cors, {
+  methods: '*'
+})
+
 app.setValidatorCompiler(validatorCompiler);
 app.setSerializerCompiler(serializerCompiler);
 
 app.register(registerRoute);
 app.register(loginRoute);
 app.register(profileRoute);
-app.register(activateAccountRoute);
-app.register(resendCodeRoute);
+
 app.register(createClassRoute);
 app.register(getClassRoute);
 app.register(getClassByIdRoute);
+
 app.register(createCheckinRoute);
 app.register(cancelCheckinRoute);
 

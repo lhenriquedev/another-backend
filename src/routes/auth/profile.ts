@@ -1,5 +1,5 @@
 import z from "zod";
-import { and, count, eq, gte, lte } from "drizzle-orm";
+import { and, count, eq, gte, lte, sql } from "drizzle-orm";
 import { belts, checkins, users } from "../../database/schema.ts";
 import { checkRequestJWT } from "../../hooks/check-request-jwt.ts";
 import { db } from "../../database/client.ts";
@@ -20,8 +20,10 @@ export const profileRoute: FastifyPluginAsyncZod = async (server) => {
               email: z.string(),
               isActive: z.boolean(),
               belt: z.string(),
-              requiredClassesInCurrentBelt: z.number(),
-              checkinsThisMonth: z.number(),
+              phone: z.string().nullable(),
+              birthDate: z.string(),
+              gender: z.string(),
+              totalCheckins: z.coerce.number(),
             }),
           }),
           401: z.object({ message: "Unauthorized" }),
@@ -32,45 +34,29 @@ export const profileRoute: FastifyPluginAsyncZod = async (server) => {
     async (request, reply) => {
       const user = getAuthenticatedUserFromRequest(request);
 
-      const now = new Date();
-      const _startOfMonth = startOfMonth(now);
-      const _endOfMonth = endOfMonth(now);
+      const [userProfile] = await db
+        .select({
+          name: users.name,
+          email: users.email,
+          isActive: users.isActive,
+          belt: belts.belt,
+          phone: users.phone,
+          birthDate: users.birthDate,
+          gender: users.gender,
+          totalCheckins: sql<number>`count(${checkins.id})`.as('totalCheckins'),
+        })
+        .from(users)
+        .innerJoin(belts, eq(belts.id, users.beltId))
+        .leftJoin(checkins, eq(users.id, checkins.userId))
+        .where(eq(users.id, user.sub))
+        .groupBy(users.id, belts.id)
 
-      const [currentUserResult, checkinsThisMonthResult] = await Promise.all([
-        db
-          .select({
-            belt: belts.belt,
-            name: users.name,
-            email: users.email,
-            isActive: users.isActive,
-            requiredClassesInCurrentBelt: belts.requiredClasses,
-          })
-          .from(users)
-          .innerJoin(belts, eq(belts.id, users.beltId))
-          .where(eq(users.id, user.sub)),
-        db
-          .select({ count: count() })
-          .from(checkins)
-          .where(
-            and(
-              eq(checkins.userId, user.sub),
-              eq(checkins.status, "done"),
-              gte(checkins.completedAt, _startOfMonth),
-              lte(checkins.completedAt, _endOfMonth)
-            )
-          ),
-      ]);
-
-      const [currentUser] = currentUserResult;
-      const [checkinsThisMonth] = checkinsThisMonthResult;
-
-      if (!currentUser)
+      if (!userProfile)
         return reply.status(404).send({ message: "User not found" });
 
       return {
         user: {
-          ...currentUser,
-          checkinsThisMonth: checkinsThisMonth.count,
+          ...userProfile,
         },
       };
     }
