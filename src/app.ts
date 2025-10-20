@@ -17,6 +17,7 @@ import {
 } from "fastify-type-provider-zod";
 import { getClassByIdRoute } from "./routes/classes/get-class-by-id.ts";
 import { getBeltsRoute } from "./routes/classes/get-belts.ts";
+import { getRecentClassRoute } from "./routes/classes/get-recent-class.ts";
 
 const app = fastify().withTypeProvider<ZodTypeProvider>();
 
@@ -34,6 +35,7 @@ app.register(profileRoute);
 app.register(createClassRoute);
 app.register(getClassRoute);
 app.register(getClassByIdRoute);
+app.register(getRecentClassRoute)
 
 app.register(createCheckinRoute);
 app.register(cancelCheckinRoute);
