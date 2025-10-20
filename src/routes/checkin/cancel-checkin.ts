@@ -58,34 +58,36 @@ export const cancelCheckinRoute: FastifyPluginAsyncZod = async (server) => {
         return reply.status(400).send({ message: "Check-in não encontrado" });
       }
 
-      if (existingCheckin.status === "cancelled") {
-        return reply.status(400).send({ message: "Check-in já cancelado" });
-      }
-
       const status = getClassStatus({
         startTime: classData.startTime,
         endTime: classData.endTime,
       });
 
+
       const isInstructorOfClass =
         currentUserRole === "instructor" &&
         currentUserId === classData.instructorId;
 
-      const isAdmin = currentUserRole === "admin";
-      const hasSpecialPermission = isInstructorOfClass || isAdmin;
+      const targetId = targetUserId ?? currentUserId;
+      const isSelf = targetId === currentUserId;
 
+      const allowed =
+        currentUserRole === "admin" ||
+        (currentUserRole === "instructor" && isInstructorOfClass) ||
+        (currentUserRole === "student" && isSelf);
 
-      if (!hasSpecialPermission) {
+      if (!allowed) {
         return reply
           .status(403)
           .send({ message: "Você não tem permissão para fazer esta ação." });
       }
 
-      if (userId !== currentUserId) {
-        return reply.status(403).send({
-          message: "Você só pode fazer check-in para si mesmo",
-        });
+      if (currentUserRole === "student" && !isSelf) {
+        return reply
+          .status(403)
+          .send({ message: "Você só pode fazer check-in para si mesmo" });
       }
+
 
       if (status !== "not-started") {
         return reply.status(400).send({
@@ -104,15 +106,11 @@ export const cancelCheckinRoute: FastifyPluginAsyncZod = async (server) => {
       }
 
       await db
-        .update(checkins)
-        .set({
-          status: "cancelled",
-          completedAt: null,
-        })
+        .delete(checkins)
         .where(and(
           eq(checkins.userId, userId),
           eq(checkins.classId, classId)
-        ));
+        )).returning({ id: checkins.id });
 
       const message = userId === currentUserId
         ? "Check-in cancelado com sucesso"

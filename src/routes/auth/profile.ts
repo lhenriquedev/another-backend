@@ -16,6 +16,7 @@ export const profileRoute: FastifyPluginAsyncZod = async (server) => {
         response: {
           200: z.object({
             user: z.object({
+              id: z.string(),
               name: z.string(),
               email: z.string(),
               isActive: z.boolean(),
@@ -36,6 +37,7 @@ export const profileRoute: FastifyPluginAsyncZod = async (server) => {
 
       const [userProfile] = await db
         .select({
+          id: users.id,
           name: users.name,
           email: users.email,
           isActive: users.isActive,
@@ -47,7 +49,7 @@ export const profileRoute: FastifyPluginAsyncZod = async (server) => {
         })
         .from(users)
         .innerJoin(belts, eq(belts.id, users.beltId))
-        .leftJoin(checkins, eq(users.id, checkins.userId))
+        .leftJoin(checkins, and(eq(users.id, checkins.userId), eq(checkins.status, 'done')))
         .where(eq(users.id, user.sub))
         .groupBy(users.id, belts.id)
 
@@ -55,9 +57,7 @@ export const profileRoute: FastifyPluginAsyncZod = async (server) => {
         return reply.status(404).send({ message: "User not found" });
 
       return {
-        user: {
-          ...userProfile,
-        },
+        user: userProfile
       };
     }
   );

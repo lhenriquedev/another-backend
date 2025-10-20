@@ -16,6 +16,7 @@ import {
   type ZodTypeProvider,
 } from "fastify-type-provider-zod";
 import { getClassByIdRoute } from "./routes/classes/get-class-by-id.ts";
+import { getBeltsRoute } from "./routes/classes/get-belts.ts";
 
 const app = fastify().withTypeProvider<ZodTypeProvider>();
 
@@ -37,11 +38,13 @@ app.register(getClassByIdRoute);
 app.register(createCheckinRoute);
 app.register(cancelCheckinRoute);
 
+app.register(getBeltsRoute)
+
 app.setErrorHandler((error, _, reply) => {
   if (error instanceof ZodError) {
     return reply
       .status(400)
-      .send({ message: "Validation error", issues: error.format() });
+      .send({ message: "Validation error", issues: error.flatten().fieldErrors });
   }
 
   if (process.env.NODE_ENV !== "production") {

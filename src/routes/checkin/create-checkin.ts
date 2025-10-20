@@ -1,11 +1,11 @@
-import z, { uuid } from 'zod';
-import { and, eq, sql } from 'drizzle-orm';
-import { checkins, classes, users } from '../../database/schema.ts';
-import { checkRequestJWT } from '../../hooks/check-request-jwt.ts';
-import { checkUserRole } from '../../hooks/check-user-role.ts';
-import { db } from '../../database/client.ts';
-import { getAuthenticatedUserFromRequest } from '../../utils/get-authenticated-user-from-request.ts';
-import { getClassStatus } from '../../utils/get-class-status.ts';
+import z, { uuid } from "zod";
+import { and, eq, sql } from "drizzle-orm";
+import { checkins, classes, users } from "../../database/schema.ts";
+import { checkRequestJWT } from "../../hooks/check-request-jwt.ts";
+import { checkUserRole } from "../../hooks/check-user-role.ts";
+import { db } from "../../database/client.ts";
+import { getAuthenticatedUserFromRequest } from "../../utils/get-authenticated-user-from-request.ts";
+import { getClassStatus } from "../../utils/get-class-status.ts";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 
 export const createCheckinRoute: FastifyPluginAsyncZod = async (server) => {
@@ -36,8 +36,6 @@ export const createCheckinRoute: FastifyPluginAsyncZod = async (server) => {
 
       const { classId, userId: targetUserId } = request.body;
 
-      const userId = targetUserId || currentUserId;
-
       const [classData] = await db
         .select()
         .from(classes)
@@ -56,19 +54,24 @@ export const createCheckinRoute: FastifyPluginAsyncZod = async (server) => {
         currentUserRole === "instructor" &&
         currentUserId === classData.instructorId;
 
-      const isAdmin = currentUserRole === "admin";
-      const hasSpecialPermission = isInstructorOfClass || isAdmin;
+      const targetId = targetUserId ?? currentUserId;
+      const isSelf = targetId === currentUserId;
 
-      if (!hasSpecialPermission) {
+      const allowed =
+        currentUserRole === "admin" ||
+        (currentUserRole === "instructor" && isInstructorOfClass) ||
+        (currentUserRole === "student" && isSelf);
+
+      if (!allowed) {
         return reply
           .status(403)
           .send({ message: "Você não tem permissão para fazer esta ação." });
       }
 
-      if (userId !== currentUserId) {
-        return reply.status(403).send({
-          message: "Você só pode fazer check-in para si mesmo",
-        });
+      if (currentUserRole === "student" && !isSelf) {
+        return reply
+          .status(403)
+          .send({ message: "Você só pode fazer check-in para si mesmo" });
       }
 
       if (status !== "not-started") {
@@ -81,7 +84,7 @@ export const createCheckinRoute: FastifyPluginAsyncZod = async (server) => {
       const [targetUser] = await db
         .select()
         .from(users)
-        .where(eq(users.id, userId));
+        .where(eq(users.id, targetId));
 
       if (!targetUser) {
         return reply.status(400).send({ message: "Usuário não encontrado" });
@@ -96,25 +99,23 @@ export const createCheckinRoute: FastifyPluginAsyncZod = async (server) => {
       const [existingCheckin] = await db
         .select()
         .from(checkins)
-        .where(and(eq(checkins.userId, userId), eq(checkins.classId, classId)));
+        .where(and(eq(checkins.userId, targetId), eq(checkins.classId, classId)));
 
-      if (existingCheckin) {
-        if (existingCheckin.status === "cancelled") {
-          await db
-            .update(checkins)
-            .set({
-              status: "done",
-              completedAt: new Date(),
-            })
-            .where(eq(checkins.id, existingCheckin.id));
+      if (existingCheckin && existingCheckin.status !== "cancelled") {
+        return reply.status(409).send({ message: "Já existe um check-in ativo para este aluno nesta aula" })
+      }
 
-          return reply.status(200).send({
-            message: "Check-in reativado com sucesso",
-          });
-        }
+      if (existingCheckin && existingCheckin.status === "cancelled") {
+        await db
+          .update(checkins)
+          .set({
+            status: "done",
+            completedAt: new Date(),
+          })
+          .where(eq(checkins.id, existingCheckin.id));
 
-        return reply.status(409).send({
-          message: "Já existe um check-in ativo para este aluno nesta aula",
+        return reply.status(200).send({
+          message: "Check-in reativado com sucesso",
         });
       }
 
@@ -132,14 +133,14 @@ export const createCheckinRoute: FastifyPluginAsyncZod = async (server) => {
       }
 
       await db.insert(checkins).values({
-        userId,
+        userId: targetId,
         classId,
         status: "done",
         completedAt: new Date(),
       });
 
       const message =
-        userId === currentUserId
+        targetId === currentUserId
           ? "Você fez check-in na aula"
           : "Check-in realizado com sucesso para o aluno";
 

@@ -13,14 +13,14 @@ export const registerRoute: FastifyPluginAsyncZod = async (server) => {
         body: z.object({
           email: z.email('Email inválido').min(1, 'Email é obrigatório'),
           password: z.string().min(8, 'Email deve conter 8 caracteres'),
-          name: z.string(),
-          birthDate: z.string(),
+          name: z.string().min(1, "Nome é obrigatório"),
+          birthDate: z.string().min(1, "Data de nascimento é obrigatório"),
           gender: z.enum(['female', 'male']),
           phone: z.string().optional(),
           beltId: z.uuid(),
         }),
         response: {
-          201: z.object({ code: z.string() }),
+          201: z.object({ message: z.string() }),
           400: z.object({ message: z.string() }),
           409: z.object({ message: z.string() })
         },
@@ -53,7 +53,7 @@ export const registerRoute: FastifyPluginAsyncZod = async (server) => {
         })
         .returning();
 
-      return reply.status(201).send();
+      return reply.status(201).send({ message: 'Sua conta foi criada com sucesso!' });
     }
   );
 };

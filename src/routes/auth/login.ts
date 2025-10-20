@@ -24,16 +24,14 @@ export const loginRoute: FastifyPluginAsyncZod = async (server) => {
     async (request, reply) => {
       const { email, password } = request.body;
 
-      const result = await db
-        .select()
-        .from(users)
-        .where(eq(users.email, email));
+      const user = await db.query.users.findFirst({
+        columns: { isActive: true, password: true, id: true, role: true },
+        where: eq(users.email, email),
+      });
 
-      if (result.length === 0) {
+      if (!user) {
         return reply.status(400).send({ message: "Credenciais inválidas" });
       }
-
-      const user = result[0];
 
       const doesPasswordsMatch = await compare(password, user.password);
 
