@@ -1,9 +1,9 @@
 import jwt from "jsonwebtoken";
 import z from "zod";
 import { compare } from "bcryptjs";
-import { db } from "../../database/client.ts";
+import { db } from "../../database/client";
 import { eq } from "drizzle-orm";
-import { users } from "../../database/schema.ts";
+import { users } from "../../database/schema";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 
 export const loginRoute: FastifyPluginAsyncZod = async (server) => {

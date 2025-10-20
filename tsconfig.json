@@ -1,25 +1,19 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   "display": "Node 22",
-  "_version": "22.0.0",
-  "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules"],
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"],
   "compilerOptions": {
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": false,
-    "forceConsistentCasingInFileNames": true,
-    "strictNullChecks": true,
-    "noEmit": true,
-    "incremental": true,
-    "jsx": "react-jsx", // support JSX
-    "esModuleInterop": true,
+    "lib": ["esnext"],
+    "target": "es2020",
     "module": "esnext",
     "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "target": "ES2017",
-    "allowImportingTsExtensions": true
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true
   }
 }

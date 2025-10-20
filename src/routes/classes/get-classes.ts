@@ -1,9 +1,9 @@
 import z from "zod";
-import { and, eq, sql, desc, asc, inArray, SQL } from "drizzle-orm"; // Adicionar inArray aqui
-import { checkins, classes, users, categories } from "../../database/schema.ts";
-import { checkRequestJWT } from "../../hooks/check-request-jwt.ts";
-import { checkUserRole } from "../../hooks/check-user-role.ts";
-import { db } from "../../database/client.ts";
+import { and, eq, sql, desc, asc, inArray, SQL } from "drizzle-orm";
+import { checkins, classes, users, categories } from "../../database/schema";
+import { checkRequestJWT } from "../../hooks/check-request-jwt";
+import { checkUserRole } from "../../hooks/check-user-role";
+import { db } from "../../database/client";
 import { parseISO, startOfDay, endOfDay } from "date-fns";
 import { toZonedTime, fromZonedTime } from "date-fns-tz";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";

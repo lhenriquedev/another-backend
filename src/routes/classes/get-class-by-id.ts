@@ -6,13 +6,13 @@ import {
   users,
   categories,
   belts,
-} from "../../database/schema.ts";
-import { checkRequestJWT } from "../../hooks/check-request-jwt.ts";
-import { checkUserRole } from "../../hooks/check-user-role.ts";
-import { db } from "../../database/client.ts";
+} from "../../database/schema";
+import { checkRequestJWT } from "../../hooks/check-request-jwt";
+import { checkUserRole } from "../../hooks/check-user-role";
+import { db } from "../../database/client";
 
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
-import { getClassStatus } from "../../utils/get-class-status.ts";
+import { getClassStatus } from "../../utils/get-class-status";
 
 export const getClassByIdRoute: FastifyPluginAsyncZod = async (server) => {
   server.get(

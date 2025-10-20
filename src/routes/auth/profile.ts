@@ -1,10 +1,10 @@
 import z from "zod";
 import { and, count, eq, gte, lte, sql } from "drizzle-orm";
-import { belts, checkins, users } from "../../database/schema.ts";
-import { checkRequestJWT } from "../../hooks/check-request-jwt.ts";
-import { db } from "../../database/client.ts";
+import { belts, checkins, users } from "../../database/schema";
+import { checkRequestJWT } from "../../hooks/check-request-jwt";
+import { db } from "../../database/client";
 import { endOfMonth, startOfMonth } from "date-fns";
-import { getAuthenticatedUserFromRequest } from "../../utils/get-authenticated-user-from-request.ts";
+import { getAuthenticatedUserFromRequest } from "../../utils/get-authenticated-user-from-request";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 
 export const profileRoute: FastifyPluginAsyncZod = async (server) => {

@@ -1,11 +1,11 @@
 import z, { uuid } from "zod";
 import { and, eq, sql } from "drizzle-orm";
-import { checkins, classes, users } from "../../database/schema.ts";
-import { checkRequestJWT } from "../../hooks/check-request-jwt.ts";
-import { checkUserRole } from "../../hooks/check-user-role.ts";
-import { db } from "../../database/client.ts";
-import { getAuthenticatedUserFromRequest } from "../../utils/get-authenticated-user-from-request.ts";
-import { getClassStatus } from "../../utils/get-class-status.ts";
+import { checkins, classes, users } from "../../database/schema";
+import { checkRequestJWT } from "../../hooks/check-request-jwt";
+import { checkUserRole } from "../../hooks/check-user-role";
+import { db } from "../../database/client";
+import { getAuthenticatedUserFromRequest } from "../../utils/get-authenticated-user-from-request";
+import { getClassStatus } from "../../utils/get-class-status";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 
 export const cancelCheckinRoute: FastifyPluginAsyncZod = async (server) => {
