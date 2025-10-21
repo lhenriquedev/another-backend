@@ -1,7 +1,6 @@
 {
   "name": "another-backend",
   "version": "1.0.0",
-  "main": "dist/server.js",
   "type": "module",
   "scripts": {
     "dev": "tsx --env-file .env --watch  src/server.ts",
