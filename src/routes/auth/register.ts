@@ -1,6 +1,6 @@
 import z from "zod";
-import { db } from "../../database/client";
-import { users } from "../../database/schema";
+import { db } from "../../database/client.ts";
+import { users } from "../../database/schema.ts";
 import { eq } from "drizzle-orm";
 import { hash } from "bcryptjs";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";

@@ -1,10 +1,10 @@
 import z from "zod";
 import { and, desc, eq, sql } from "drizzle-orm";
-import { categories, checkins, classes } from "../../database/schema";
-import { checkRequestJWT } from "../../hooks/check-request-jwt";
-import { checkUserRole } from "../../hooks/check-user-role";
-import { db } from "../../database/client";
-import { getAuthenticatedUserFromRequest } from "../../utils/get-authenticated-user-from-request";
+import { categories, checkins, classes } from "../../database/schema.ts";
+import { checkRequestJWT } from "../../hooks/check-request-jwt.ts";
+import { checkUserRole } from "../../hooks/check-user-role.ts";
+import { db } from "../../database/client.ts";
+import { getAuthenticatedUserFromRequest } from "../../utils/get-authenticated-user-from-request.ts";
 
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 

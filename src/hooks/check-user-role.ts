@@ -1,4 +1,4 @@
-import { getAuthenticatedUserFromRequest } from "../utils/get-authenticated-user-from-request";
+import { getAuthenticatedUserFromRequest } from "../utils/get-authenticated-user-from-request.ts";
 import type { FastifyRequest, FastifyReply } from "fastify";
 
 type Roles = "admin" | "student" | "instructor";

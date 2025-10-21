@@ -1,5 +1,5 @@
 import z from 'zod';
-import { db } from '../../database/client';
+import { db } from '../../database/client.ts';
 
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 

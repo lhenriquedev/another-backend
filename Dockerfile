@@ -16,5 +16,6 @@ RUN npm ci --omit=dev
 COPY --from=builder /app/dist ./dist
 
 EXPOSE 3333
-CMD ["npx", "tsx", "src/server.ts"]
+CMD ["node", "--env-file=.env", "--experimental-strip-types", "src/server.ts"]
+
 
