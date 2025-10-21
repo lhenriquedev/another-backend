@@ -55,7 +55,10 @@ app.setErrorHandler((error, _, reply) => {
     // here we should log to a external tool like datadog, new relic or sentry
   }
 
-  return reply.status(500).send({ message: "Internal server error" });
+  console.log(error);
+
+
+  return reply.status(500).send({ message: error.message });
 });
 
 export { app };
