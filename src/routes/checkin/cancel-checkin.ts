@@ -1,12 +1,12 @@
+import { and, eq } from "drizzle-orm";
+import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import z, { uuid } from "zod";
-import { and, eq, sql } from "drizzle-orm";
+import { db } from "../../database/client.ts";
 import { checkins, classes, users } from "../../database/schema.ts";
 import { checkRequestJWT } from "../../hooks/check-request-jwt.ts";
 import { checkUserRole } from "../../hooks/check-user-role.ts";
-import { db } from "../../database/client.ts";
 import { getAuthenticatedUserFromRequest } from "../../utils/get-authenticated-user-from-request.ts";
 import { getClassStatus } from "../../utils/get-class-status.ts";
-import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 
 export const cancelCheckinRoute: FastifyPluginAsyncZod = async (server) => {
   server.patch(
@@ -49,10 +49,7 @@ export const cancelCheckinRoute: FastifyPluginAsyncZod = async (server) => {
       const [existingCheckin] = await db
         .select()
         .from(checkins)
-        .where(and(
-          eq(checkins.userId, userId),
-          eq(checkins.classId, classId)
-        ));
+        .where(and(eq(checkins.userId, userId), eq(checkins.classId, classId)));
 
       if (!existingCheckin) {
         return reply.status(400).send({ message: "Check-in não encontrado" });
@@ -62,7 +59,6 @@ export const cancelCheckinRoute: FastifyPluginAsyncZod = async (server) => {
         startTime: classData.startTime,
         endTime: classData.endTime,
       });
-
 
       const isInstructorOfClass =
         currentUserRole === "instructor" &&
@@ -88,7 +84,6 @@ export const cancelCheckinRoute: FastifyPluginAsyncZod = async (server) => {
           .send({ message: "Você só pode fazer check-in para si mesmo" });
       }
 
-
       if (status !== "not-started") {
         return reply.status(400).send({
           message:
@@ -107,14 +102,13 @@ export const cancelCheckinRoute: FastifyPluginAsyncZod = async (server) => {
 
       await db
         .delete(checkins)
-        .where(and(
-          eq(checkins.userId, userId),
-          eq(checkins.classId, classId)
-        )).returning({ id: checkins.id });
+        .where(and(eq(checkins.userId, userId), eq(checkins.classId, classId)))
+        .returning({ id: checkins.id });
 
-      const message = userId === currentUserId
-        ? "Check-in cancelado com sucesso"
-        : "Check-in do aluno cancelado com sucesso";
+      const message =
+        userId === currentUserId
+          ? "Check-in cancelado com sucesso"
+          : "Check-in do aluno cancelado com sucesso";
 
       return reply.status(200).send({ message });
     }

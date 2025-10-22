@@ -1,10 +1,10 @@
+import { and, eq, sql } from "drizzle-orm";
+import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import z from "zod";
-import { and, count, eq, gte, lte, sql } from "drizzle-orm";
+import { db } from "../../database/client.ts";
 import { belts, checkins, users } from "../../database/schema.ts";
 import { checkRequestJWT } from "../../hooks/check-request-jwt.ts";
-import { db } from "../../database/client.ts";
 import { getAuthenticatedUserFromRequest } from "../../utils/get-authenticated-user-from-request.ts";
-import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 
 export const profileRoute: FastifyPluginAsyncZod = async (server) => {
   server.get(
@@ -44,19 +44,22 @@ export const profileRoute: FastifyPluginAsyncZod = async (server) => {
           phone: users.phone,
           birthDate: users.birthDate,
           gender: users.gender,
-          totalCheckins: sql<number>`count(${checkins.id})`.as('totalCheckins'),
+          totalCheckins: sql<number>`count(${checkins.id})`.as("totalCheckins"),
         })
         .from(users)
         .innerJoin(belts, eq(belts.id, users.beltId))
-        .leftJoin(checkins, and(eq(users.id, checkins.userId), eq(checkins.status, 'done')))
+        .leftJoin(
+          checkins,
+          and(eq(users.id, checkins.userId), eq(checkins.status, "done"))
+        )
         .where(eq(users.id, user.sub))
-        .groupBy(users.id, belts.id)
+        .groupBy(users.id, belts.id);
 
       if (!userProfile)
         return reply.status(404).send({ message: "User not found" });
 
       return {
-        user: userProfile
+        user: userProfile,
       };
     }
   );

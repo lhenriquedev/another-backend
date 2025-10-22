@@ -1,5 +1,5 @@
-import z from 'zod';
-import { db } from '../../database/client.ts';
+import z from "zod";
+import { db } from "../../database/client.ts";
 
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 
@@ -15,23 +15,22 @@ export const getBeltsRoute: FastifyPluginAsyncZod = async (server) => {
                 id: z.string(),
                 belt: z.enum(["white", "blue", "purple", "brown", "black"]),
               })
-            )
+            ),
           }),
-          400: z.object({ message: z.string() })
+          400: z.object({ message: z.string() }),
         },
       },
     },
     async (request, reply) => {
-
       const belts = await db.query.belts.findMany({
-        columns: { id: true, belt: true }
-      })
+        columns: { id: true, belt: true },
+      });
 
       if (!belts) {
-        return reply.status(400).send({ message: 'Nenhuma faixa cadastrada' })
+        return reply.status(400).send({ message: "Nenhuma faixa cadastrada" });
       }
 
-      return reply.status(200).send({ belts })
+      return reply.status(200).send({ belts });
     }
   );
 };

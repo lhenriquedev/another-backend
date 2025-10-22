@@ -1,12 +1,12 @@
+import { endOfDay, parseISO, startOfDay } from "date-fns";
+import { fromZonedTime, toZonedTime } from "date-fns-tz";
+import { and, asc, desc, eq, inArray, sql, SQL } from "drizzle-orm";
+import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import z from "zod";
-import { and, eq, sql, desc, asc, inArray, SQL } from "drizzle-orm";
-import { checkins, classes, users, categories } from "../../database/schema.ts";
+import { db } from "../../database/client.ts";
+import { categories, checkins, classes, users } from "../../database/schema.ts";
 import { checkRequestJWT } from "../../hooks/check-request-jwt.ts";
 import { checkUserRole } from "../../hooks/check-user-role.ts";
-import { db } from "../../database/client.ts";
-import { parseISO, startOfDay, endOfDay } from "date-fns";
-import { toZonedTime, fromZonedTime } from "date-fns-tz";
-import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 
 export const getClassRoute: FastifyPluginAsyncZod = async (server) => {
   server.get(

@@ -1,12 +1,12 @@
-import z, { uuid } from "zod";
 import { and, eq, sql } from "drizzle-orm";
+import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
+import z, { uuid } from "zod";
+import { db } from "../../database/client.ts";
 import { checkins, classes, users } from "../../database/schema.ts";
 import { checkRequestJWT } from "../../hooks/check-request-jwt.ts";
 import { checkUserRole } from "../../hooks/check-user-role.ts";
-import { db } from "../../database/client.ts";
 import { getAuthenticatedUserFromRequest } from "../../utils/get-authenticated-user-from-request.ts";
 import { getClassStatus } from "../../utils/get-class-status.ts";
-import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 
 export const createCheckinRoute: FastifyPluginAsyncZod = async (server) => {
   server.post(
@@ -99,10 +99,14 @@ export const createCheckinRoute: FastifyPluginAsyncZod = async (server) => {
       const [existingCheckin] = await db
         .select()
         .from(checkins)
-        .where(and(eq(checkins.userId, targetId), eq(checkins.classId, classId)));
+        .where(
+          and(eq(checkins.userId, targetId), eq(checkins.classId, classId))
+        );
 
       if (existingCheckin && existingCheckin.status !== "cancelled") {
-        return reply.status(409).send({ message: "Já existe um check-in ativo para este aluno nesta aula" })
+        return reply.status(409).send({
+          message: "Já existe um check-in ativo para este aluno nesta aula",
+        });
       }
 
       if (existingCheckin && existingCheckin.status === "cancelled") {

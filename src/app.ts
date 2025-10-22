@@ -18,6 +18,7 @@ import {
   type ZodTypeProvider,
 } from "fastify-type-provider-zod";
 import { createClassBulkRoute } from "./routes/classes/create-class-bulk.ts";
+import { rankingRoute } from "./routes/users/ranking.ts";
 import { updateProfileRoute } from "./routes/users/update-profile.ts";
 
 const app = fastify().withTypeProvider<ZodTypeProvider>();
@@ -45,6 +46,7 @@ app.register(createCheckinRoute);
 app.register(cancelCheckinRoute);
 
 app.register(getBeltsRoute);
+app.register(rankingRoute);
 
 app.setErrorHandler((error, _, reply) => {
   if (error instanceof ZodError) {

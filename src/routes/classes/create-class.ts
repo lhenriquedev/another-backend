@@ -1,11 +1,11 @@
+import { fromZonedTime } from "date-fns-tz";
+import { eq } from "drizzle-orm";
+import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import z from "zod";
+import { db } from "../../database/client.ts";
 import { categories, classes, users } from "../../database/schema.ts";
 import { checkRequestJWT } from "../../hooks/check-request-jwt.ts";
 import { checkUserRole } from "../../hooks/check-user-role.ts";
-import { db } from "../../database/client.ts";
-import { eq } from "drizzle-orm";
-import { fromZonedTime } from "date-fns-tz";
-import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 
 export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
   server.post(
@@ -13,18 +13,16 @@ export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
     {
       preHandler: [checkRequestJWT, checkUserRole(["instructor", "admin"])],
       schema: {
-        body: z
-          .object({
-            title: z.string().optional(),
-            description: z.string().optional(),
-            date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-            startTime: z.string().regex(/^\d{2}:\d{2}$/), // Formato HH:mm como "19:43"
-            endTime: z.string().regex(/^\d{2}:\d{2}$/), // Formato HH:mm como "21:30"
-            instructorId: z.uuid(),
-            categoryId: z.uuid(),
-            capacity: z.coerce.number().default(10),
-          })
-        ,
+        body: z.object({
+          title: z.string().optional(),
+          description: z.string().optional(),
+          date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          startTime: z.string().regex(/^\d{2}:\d{2}$/), // Formato HH:mm como "19:43"
+          endTime: z.string().regex(/^\d{2}:\d{2}$/), // Formato HH:mm como "21:30"
+          instructorId: z.uuid(),
+          categoryId: z.uuid(),
+          capacity: z.coerce.number().default(10),
+        }),
         response: {
           200: z.object({ id: z.string(), message: z.string() }),
           400: z.object({ message: z.string() }),
@@ -73,7 +71,6 @@ export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
         });
       }
 
-
       const startDateTimeString = `${date}T${startTime}:00`;
       const endDateTimeString = `${date}T${endTime}:00`;
 
@@ -86,12 +83,12 @@ export const createClassRoute: FastifyPluginAsyncZod = async (server) => {
         });
       }
 
-
       const now = new Date();
 
       if (startTimeUTC < now) {
         return reply.status(400).send({
-          message: "Não é possível criar aulas com horário de início no passado",
+          message:
+            "Não é possível criar aulas com horário de início no passado",
         });
       }
 
