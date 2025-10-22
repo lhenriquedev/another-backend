@@ -1,5 +1,8 @@
 import cors from "@fastify/cors";
 import fastify from "fastify";
+import { ZodError } from "zod";
+import { loginRoute } from "./routes/auth/login.ts";
+import { registerRoute } from "./routes/auth/register.ts";
 import { cancelCheckinRoute } from "./routes/checkin/cancel-checkin.ts";
 import { createCheckinRoute } from "./routes/checkin/create-checkin.ts";
 import { createClassRoute } from "./routes/classes/create-class.ts";
@@ -7,16 +10,14 @@ import { getBeltsRoute } from "./routes/classes/get-belts.ts";
 import { getClassByIdRoute } from "./routes/classes/get-class-by-id.ts";
 import { getClassRoute } from "./routes/classes/get-classes.ts";
 import { getRecentClassRoute } from "./routes/classes/get-recent-class.ts";
-import { loginRoute } from "./routes/auth/login.ts";
 import { profileRoute } from "./routes/users/profile.ts";
-import { registerRoute } from "./routes/auth/register.ts";
-import { ZodError } from "zod";
 
 import {
-  validatorCompiler,
   serializerCompiler,
+  validatorCompiler,
   type ZodTypeProvider,
 } from "fastify-type-provider-zod";
+import { createClassBulkRoute } from "./routes/classes/create-class-bulk.ts";
 import { updateProfileRoute } from "./routes/users/update-profile.ts";
 
 const app = fastify().withTypeProvider<ZodTypeProvider>();
@@ -35,6 +36,7 @@ app.register(profileRoute);
 app.register(updateProfileRoute);
 
 app.register(createClassRoute);
+app.register(createClassBulkRoute);
 app.register(getClassRoute);
 app.register(getClassByIdRoute);
 app.register(getRecentClassRoute);
