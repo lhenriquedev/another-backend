@@ -1,52 +1,55 @@
-import cors from '@fastify/cors';
-import fastify from 'fastify';
-import { cancelCheckinRoute } from './routes/checkin/cancel-checkin.ts';
-import { createCheckinRoute } from './routes/checkin/create-checkin.ts';
-import { createClassRoute } from './routes/classes/create-class.ts';
-import { getBeltsRoute } from './routes/classes/get-belts.ts';
-import { getClassByIdRoute } from './routes/classes/get-class-by-id.ts';
-import { getClassRoute } from './routes/classes/get-classes.ts';
-import { getRecentClassRoute } from './routes/classes/get-recent-class.ts';
-import { loginRoute } from './routes/auth/login.ts';
-import { profileRoute } from './routes/auth/profile.ts';
-import { registerRoute } from './routes/auth/register.ts';
-import { ZodError } from 'zod';
-
+import cors from "@fastify/cors";
+import fastify from "fastify";
+import { cancelCheckinRoute } from "./routes/checkin/cancel-checkin.ts";
+import { createCheckinRoute } from "./routes/checkin/create-checkin.ts";
+import { createClassRoute } from "./routes/classes/create-class.ts";
+import { getBeltsRoute } from "./routes/classes/get-belts.ts";
+import { getClassByIdRoute } from "./routes/classes/get-class-by-id.ts";
+import { getClassRoute } from "./routes/classes/get-classes.ts";
+import { getRecentClassRoute } from "./routes/classes/get-recent-class.ts";
+import { loginRoute } from "./routes/auth/login.ts";
+import { profileRoute } from "./routes/users/profile.ts";
+import { registerRoute } from "./routes/auth/register.ts";
+import { ZodError } from "zod";
 
 import {
   validatorCompiler,
   serializerCompiler,
   type ZodTypeProvider,
 } from "fastify-type-provider-zod";
+import { updateProfileRoute } from "./routes/users/update-profile.ts";
 
 const app = fastify().withTypeProvider<ZodTypeProvider>();
 
 app.register(cors, {
-  methods: '*'
-})
+  methods: "*",
+});
 
 app.setValidatorCompiler(validatorCompiler);
 app.setSerializerCompiler(serializerCompiler);
 
 app.register(registerRoute);
 app.register(loginRoute);
+
 app.register(profileRoute);
+app.register(updateProfileRoute);
 
 app.register(createClassRoute);
 app.register(getClassRoute);
 app.register(getClassByIdRoute);
-app.register(getRecentClassRoute)
+app.register(getRecentClassRoute);
 
 app.register(createCheckinRoute);
 app.register(cancelCheckinRoute);
 
-app.register(getBeltsRoute)
+app.register(getBeltsRoute);
 
 app.setErrorHandler((error, _, reply) => {
   if (error instanceof ZodError) {
-    return reply
-      .status(400)
-      .send({ message: "Validation error", issues: error.flatten().fieldErrors });
+    return reply.status(400).send({
+      message: "Validation error",
+      issues: error.flatten().fieldErrors,
+    });
   }
 
   if (process.env.NODE_ENV !== "production") {
@@ -56,7 +59,6 @@ app.setErrorHandler((error, _, reply) => {
   }
 
   console.log(error);
-
 
   return reply.status(500).send({ message: error.message });
 });
