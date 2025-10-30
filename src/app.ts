@@ -21,6 +21,7 @@ import { createClassBulkRoute } from "./routes/classes/create-class-bulk.ts";
 import { rankingRoute } from "./routes/users/ranking.ts";
 import { upcomingClassesRoute } from "./routes/users/upcoming-classes.ts";
 import { updateProfileRoute } from "./routes/users/update-profile.ts";
+import { summaryRoute } from "./routes/users/summary.ts";
 
 const app = fastify().withTypeProvider<ZodTypeProvider>();
 
@@ -36,6 +37,7 @@ app.register(loginRoute);
 
 app.register(profileRoute);
 app.register(updateProfileRoute);
+app.register(summaryRoute)
 
 app.register(createClassRoute);
 app.register(createClassBulkRoute);

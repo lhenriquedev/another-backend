@@ -11,10 +11,7 @@ export const upcomingClassesRoute: FastifyPluginAsyncZod = async (server) => {
   server.get(
     "/upcoming-classes",
     {
-      preHandler: [
-        checkRequestJWT,
-        checkUserRole(["admin", "instructor", "student"]),
-      ],
+      preHandler: [checkRequestJWT],
       schema: {
         response: {
           200: z.object({
@@ -27,6 +24,8 @@ export const upcomingClassesRoute: FastifyPluginAsyncZod = async (server) => {
                 startTime: z.string(),
                 endTime: z.string(),
                 capacity: z.number(),
+                instructor: z.string(),
+                category: z.enum(["Misto", "Kids I", "Kids II", "Iniciante", "Competição", "Intermediário", "Avançado"]),
                 // status: z.enum(["not-started", "in-progress", "finished"]),
                 // instructor: z.object({ id: z.string(), name: z.string() }),
               })
@@ -50,13 +49,13 @@ export const upcomingClassesRoute: FastifyPluginAsyncZod = async (server) => {
           startTime: classes.startTime,
           endTime: classes.endTime,
           capacity: classes.capacity,
-          instructorId: classes.instructorId,
-          instructorName: users.name,
+          instructor: users.name,
+          category: categories.type
         })
         .from(classes)
         .innerJoin(checkins, eq(checkins.classId, classes.id))
         .innerJoin(users, eq(users.id, classes.instructorId))
-        .leftJoin(categories, eq(categories.id, classes.categoryId))
+        .innerJoin(categories, eq(categories.id, classes.categoryId))
         .where(
           and(eq(checkins.userId, userId), gt(classes.startTime, new Date()))
         )
@@ -72,6 +71,8 @@ export const upcomingClassesRoute: FastifyPluginAsyncZod = async (server) => {
           description: c.description,
           endTime: c.endTime.toISOString(),
           startTime: c.startTime.toISOString(),
+          instructor: c.instructor,
+          category: c.category,
         })),
         total: upcomingClasses.length,
       });

@@ -46,6 +46,7 @@ export const users = pgTable(
     gender: varchar({ length: 6 }).notNull(),
     phone: varchar({ length: 20 }),
 
+
     isActive: boolean('is_active').notNull().default(false),
     beltId: uuid()
       .notNull()

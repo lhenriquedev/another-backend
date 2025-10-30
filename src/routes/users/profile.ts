@@ -23,7 +23,6 @@ export const profileRoute: FastifyPluginAsyncZod = async (server) => {
               phone: z.string().nullable(),
               birthDate: z.string(),
               gender: z.string(),
-              totalCheckins: z.coerce.number(),
             }),
           }),
           401: z.object({ message: z.string() }),
@@ -42,16 +41,12 @@ export const profileRoute: FastifyPluginAsyncZod = async (server) => {
           isActive: users.isActive,
           belt: belts.belt,
           phone: users.phone,
+
           birthDate: users.birthDate,
           gender: users.gender,
-          totalCheckins: sql<number>`count(${checkins.id})`.as("totalCheckins"),
         })
         .from(users)
         .innerJoin(belts, eq(belts.id, users.beltId))
-        .leftJoin(
-          checkins,
-          and(eq(users.id, checkins.userId), eq(checkins.status, "done"))
-        )
         .where(eq(users.id, user.sub))
         .groupBy(users.id, belts.id);
 
