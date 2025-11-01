@@ -1,12 +1,18 @@
-import { endOfDay, parseISO, startOfDay } from "date-fns";
-import { fromZonedTime, toZonedTime } from "date-fns-tz";
 import { and, asc, desc, eq, inArray, sql, SQL } from "drizzle-orm";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import z from "zod";
+import { CHECKIN_STATUS } from "../../constants/index.ts";
 import { db } from "../../database/client.ts";
 import { categories, checkins, classes, users } from "../../database/schema.ts";
 import { checkRequestJWT } from "../../hooks/check-request-jwt.ts";
 import { checkUserRole } from "../../hooks/check-user-role.ts";
+import {
+  buildDateFilters,
+  buildStatusFilters,
+  buildCategoryFilter,
+  buildCursorCondition,
+} from "../../utils/class-filters.ts";
+import { getClassStatus } from "../../utils/get-class-status.ts";
 
 export const getClassRoute: FastifyPluginAsyncZod = async (server) => {
   server.get(
@@ -17,25 +23,53 @@ export const getClassRoute: FastifyPluginAsyncZod = async (server) => {
         checkUserRole(["admin", "instructor", "student"]),
       ],
       schema: {
-        querystring: z.object({
-          date: z
-            .string()
-            .regex(/^\d{4}-\d{2}-\d{2}$/)
-            .optional(),
-          startDate: z
-            .string()
-            .regex(/^\d{4}-\d{2}-\d{2}$/)
-            .optional(),
-          endDate: z
-            .string()
-            .regex(/^\d{4}-\d{2}-\d{2}$/)
-            .optional(),
-          categoryId: z.uuid().optional(),
-          status: z.enum(["not-started", "in-progress", "finished"]).optional(),
-          cursor: z.uuid().optional(),
-          limit: z.coerce.number().min(1).max(100).default(20),
-          order: z.enum(["asc", "desc"]).default("asc"),
-        }),
+        querystring: z
+          .object({
+            date: z
+              .string()
+              .regex(/^\d{4}-\d{2}-\d{2}$/)
+              .optional(),
+            startDate: z
+              .string()
+              .regex(/^\d{4}-\d{2}-\d{2}$/)
+              .optional(),
+            endDate: z
+              .string()
+              .regex(/^\d{4}-\d{2}-\d{2}$/)
+              .optional(),
+            categoryId: z.uuid().optional(),
+            status: z
+              .enum(["not-started", "in-progress", "finished"])
+              .optional(),
+            cursor: z.uuid().optional(),
+            limit: z.coerce.number().min(1).max(100).default(20),
+            order: z.enum(["asc", "desc"]).default("asc"),
+          })
+          .refine(
+            (data) => {
+              if (data.date && (data.startDate || data.endDate)) {
+                return false;
+              }
+              return true;
+            },
+            {
+              message:
+                "Não é possível usar 'date' junto com 'startDate' ou 'endDate'",
+            }
+          )
+          .refine(
+            (data) => {
+              if (data.startDate && data.endDate) {
+                const start = new Date(data.startDate);
+                const end = new Date(data.endDate);
+                return start <= end;
+              }
+              return true;
+            },
+            {
+              message: "A data inicial deve ser anterior ou igual à data final",
+            }
+          ),
         response: {
           200: z.object({
             classes: z.array(
@@ -81,76 +115,13 @@ export const getClassRoute: FastifyPluginAsyncZod = async (server) => {
         categoryId,
       } = request.query;
 
-      if (date && (startDate || endDate)) {
-        return reply.status(400).send({
-          message:
-            "Não é possível usar 'date' junto com 'startDate' ou 'endDate'",
-        });
-      }
-
-      if (startDate && endDate) {
-        const start = parseISO(startDate);
-        const end = parseISO(endDate);
-
-        if (start > end) {
-          return reply.status(400).send({
-            message: "A data inicial deve ser anterior ou igual à data final",
-          });
-        }
-      }
-
-      const timeZone = "America/Sao_Paulo";
       const now = new Date();
 
-      const filterConditions: SQL<unknown>[] = [];
-
-      if (date) {
-        const targetDate = parseISO(date);
-        const startOfDayInSaoPaulo = startOfDay(targetDate);
-        const endOfDayInSaoPaulo = endOfDay(targetDate);
-        const startOfDayUTC = fromZonedTime(startOfDayInSaoPaulo, timeZone);
-        const endOfDayUTC = fromZonedTime(endOfDayInSaoPaulo, timeZone);
-
-        filterConditions.push(
-          sql<boolean>`${classes.startTime} >= ${startOfDayUTC} AND ${classes.startTime} <= ${endOfDayUTC}`
-        );
-      }
-
-      if (startDate) {
-        const start = parseISO(startDate);
-        const startOfDayInSaoPaulo = startOfDay(start);
-        const startOfDayUTC = fromZonedTime(startOfDayInSaoPaulo, timeZone);
-
-        filterConditions.push(
-          sql<boolean>`${classes.startTime} >= ${startOfDayUTC}`
-        );
-      }
-
-      if (endDate) {
-        const end = parseISO(endDate);
-        const endOfDayInSaoPaulo = endOfDay(end);
-        const endOfDayUTC = fromZonedTime(endOfDayInSaoPaulo, timeZone);
-
-        filterConditions.push(
-          sql<boolean>`${classes.startTime} <= ${endOfDayUTC}`
-        );
-      }
-
-      if (status === "not-started") {
-        filterConditions.push(sql<boolean>`${classes.startTime} > ${now}`);
-      } else if (status === "in-progress") {
-        filterConditions.push(
-          sql<boolean>`${classes.startTime} <= ${now} AND ${classes.endTime} > ${now}`
-        );
-      } else if (status === "finished") {
-        filterConditions.push(sql<boolean>`${classes.endTime} <= ${now}`);
-      }
-
-      if (categoryId) {
-        filterConditions.push(
-          sql<boolean>`${classes.categoryId} = ${categoryId}`
-        );
-      }
+      const filterConditions: SQL<unknown>[] = [
+        ...buildDateFilters({ date, startDate, endDate }),
+        ...buildStatusFilters(status, now),
+        ...buildCategoryFilter(categoryId),
+      ];
 
       const filterWhereClause =
         filterConditions.length > 0 ? and(...filterConditions) : undefined;
@@ -158,24 +129,9 @@ export const getClassRoute: FastifyPluginAsyncZod = async (server) => {
       const paginationConditions: SQL<unknown>[] = [...filterConditions];
 
       if (cursor) {
-        const [cursorClass] = await db
-          .select({ startTime: classes.startTime })
-          .from(classes)
-          .where(eq(classes.id, cursor))
-          .limit(1);
-
-        if (cursorClass) {
-          if (order === "asc") {
-            paginationConditions.push(
-              sql<boolean>`(${classes.startTime} > ${cursorClass.startTime} OR 
-                   (${classes.startTime} = ${cursorClass.startTime} AND ${classes.id} > ${cursor}))`
-            );
-          } else {
-            paginationConditions.push(
-              sql<boolean>`(${classes.startTime} < ${cursorClass.startTime} OR 
-                   (${classes.startTime} = ${cursorClass.startTime} AND ${classes.id} < ${cursor}))`
-            );
-          }
+        const cursorCondition = await buildCursorCondition(cursor, order, db);
+        if (cursorCondition) {
+          paginationConditions.push(cursorCondition);
         }
       }
 
@@ -184,37 +140,39 @@ export const getClassRoute: FastifyPluginAsyncZod = async (server) => {
           ? and(...paginationConditions)
           : undefined;
 
-      const [totalResult] = await db
-        .select({ count: sql<number>`CAST(COUNT(*) as int)` })
-        .from(classes)
-        .where(filterWhereClause);
+      const [[totalResult], classesData] = await Promise.all([
+        db
+          .select({ count: sql<number>`CAST(COUNT(*) as int)` })
+          .from(classes)
+          .where(filterWhereClause),
+
+        db
+          .select({
+            id: classes.id,
+            title: classes.title,
+            description: classes.description,
+            date: classes.date,
+            startTime: classes.startTime,
+            endTime: classes.endTime,
+            capacity: classes.capacity,
+            instructorId: classes.instructorId,
+            instructorName: users.name,
+            categoryId: classes.categoryId,
+            categoryType: categories.type,
+            categoryDescription: categories.description,
+          })
+          .from(classes)
+          .leftJoin(categories, eq(categories.id, classes.categoryId))
+          .innerJoin(users, eq(users.id, classes.instructorId))
+          .where(paginationWhereClause)
+          .orderBy(
+            order === "asc" ? asc(classes.startTime) : desc(classes.startTime),
+            order === "asc" ? asc(classes.id) : desc(classes.id)
+          )
+          .limit(limit + 1),
+      ]);
 
       const total = totalResult?.count || 0;
-
-      const classesData = await db
-        .select({
-          id: classes.id,
-          title: classes.title,
-          description: classes.description,
-          date: classes.date,
-          startTime: classes.startTime,
-          endTime: classes.endTime,
-          capacity: classes.capacity,
-          instructorId: classes.instructorId,
-          instructorName: users.name,
-          categoryId: classes.categoryId,
-          categoryType: categories.type,
-          categoryDescription: categories.description,
-        })
-        .from(classes)
-        .leftJoin(categories, eq(categories.id, classes.categoryId))
-        .innerJoin(users, eq(users.id, classes.instructorId))
-        .where(paginationWhereClause)
-        .orderBy(
-          order === "asc" ? asc(classes.startTime) : desc(classes.startTime),
-          order === "asc" ? asc(classes.id) : desc(classes.id)
-        )
-        .limit(limit + 1);
 
       const hasMore = classesData.length > limit;
       const classesToReturn = hasMore
@@ -226,89 +184,59 @@ export const getClassRoute: FastifyPluginAsyncZod = async (server) => {
 
       const classIds = classesToReturn.map((c) => c.id);
 
-      let usersInClass: Array<{
-        classId: string;
-        userId: string;
-        userName: string;
-        checkinStatus: "done" | "pending" | "cancelled" | null;
-      }> = [];
-
-      if (classIds.length > 0) {
-        usersInClass = await db
-          .select({
-            classId: checkins.classId,
-            userId: users.id,
-            userName: users.name,
-            checkinStatus: checkins.status,
-          })
-          .from(checkins)
-          .innerJoin(users, eq(users.id, checkins.userId))
-          .where(inArray(checkins.classId, classIds))
-          .orderBy(users.name);
-      }
-
-      let checkinCounts: Array<{ classId: string; count: number }> = [];
-
-      if (classIds.length > 0) {
-        checkinCounts = await db
-          .select({
-            classId: checkins.classId,
-            count: sql<number>`CAST(COUNT(*) as int)`,
-          })
-          .from(checkins)
-          .where(
-            and(
-              inArray(checkins.classId, classIds),
-              sql<boolean>`${checkins.status} != 'cancelled'`
-            )
-          )
-          .groupBy(checkins.classId);
-      }
+      const checkinCounts =
+        classIds.length > 0
+          ? await db
+              .select({
+                classId: checkins.classId,
+                count: sql<number>`CAST(COUNT(*) as int)`,
+              })
+              .from(checkins)
+              .where(
+                and(
+                  inArray(checkins.classId, classIds),
+                  sql<boolean>`${checkins.status} != ${CHECKIN_STATUS.CANCELLED}`
+                )
+              )
+              .groupBy(checkins.classId)
+          : [];
 
       const checkinCountMap = new Map(
         checkinCounts.map((item) => [item.classId, item.count])
       );
 
-      const result = classesToReturn.map((_class) => {
-        const startTime = toZonedTime(new Date(_class.startTime), timeZone);
-        const endTime = toZonedTime(new Date(_class.endTime), timeZone);
-        const nowInZone = toZonedTime(now, timeZone);
+      const result = classesToReturn.map((classItem) => {
+        const classStatus = getClassStatus({
+          startTime: classItem.startTime,
+          endTime: classItem.endTime,
+        });
 
-        let classStatus: "not-started" | "in-progress" | "finished";
-        if (nowInZone < startTime) {
-          classStatus = "not-started";
-        } else if (nowInZone >= startTime && nowInZone < endTime) {
-          classStatus = "in-progress";
-        } else {
-          classStatus = "finished";
-        }
+        const totalCheckins = checkinCountMap.get(classItem.id) || 0;
 
-        const totalCheckins = checkinCountMap.get(_class.id) || 0;
-
-        if (!_class.instructorId || !_class.instructorName) {
-          throw new Error(`Aula ${_class.id} está sem instrutor válido`);
+        if (!classItem.instructorId || !classItem.instructorName) {
+          throw new Error(`Aula ${classItem.id} está sem instrutor válido`);
         }
 
         return {
-          id: _class.id,
-          title: _class.title,
-          description: _class.description,
-          date: _class.date,
-          startTime: _class.startTime.toISOString(), // Converter Date para string
-          endTime: _class.endTime.toISOString(), // Converter Date para string
-          capacity: _class.capacity,
+          id: classItem.id,
+          title: classItem.title,
+          description: classItem.description,
+          date: classItem.date,
+          startTime: classItem.startTime.toISOString(),
+          endTime: classItem.endTime.toISOString(),
+          capacity: classItem.capacity,
           status: classStatus,
           instructor: {
-            id: _class.instructorId, // Agora existe no select
-            name: _class.instructorName,
+            id: classItem.instructorId,
+            name: classItem.instructorName,
           },
           category: {
-            id: _class.categoryId,
-            type: _class.categoryType,
+            id: classItem.categoryId,
+            type: classItem.categoryType,
           },
           checkinsSummary: {
             total: totalCheckins,
-            available: _class.capacity - totalCheckins,
+            available: classItem.capacity - totalCheckins,
           },
         };
       });

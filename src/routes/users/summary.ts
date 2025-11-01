@@ -31,31 +31,34 @@ export const summaryRoute: FastifyPluginAsyncZod = async (server) => {
       const user = getAuthenticatedUserFromRequest(request);
       const userId = user.sub;
 
-      const [summary] = await db
-        .select({
-          currentBelt: belts.belt,
-          totalCheckins: count(checkins.id),
-        })
-        .from(users)
-        .innerJoin(belts, eq(belts.id, users.beltId))
-        .innerJoin(checkins, eq(checkins.userId, userId))
-        .where(eq(users.id, userId))
-        .groupBy(belts.belt)
-
       const today = new Date();
       const startMonth = startOfMonth(today);
       const endMonth = endOfMonth(today);
 
-      const [checkinThisMonth] = await db
-        .select({ total: count(checkins.id) })
-        .from(checkins)
-        .where(
-          and(
-            eq(checkins.userId, userId),
-            gte(checkins.createdAt, startMonth),
-            lte(checkins.createdAt, endMonth)
-          )
-        );
+      // Executa ambas as queries em paralelo para melhor performance
+      const [[summary], [checkinThisMonth]] = await Promise.all([
+        db
+          .select({
+            currentBelt: belts.belt,
+            totalCheckins: count(checkins.id),
+          })
+          .from(users)
+          .innerJoin(belts, eq(belts.id, users.beltId))
+          .innerJoin(checkins, eq(checkins.userId, userId))
+          .where(eq(users.id, userId))
+          .groupBy(belts.belt),
+
+        db
+          .select({ total: count(checkins.id) })
+          .from(checkins)
+          .where(
+            and(
+              eq(checkins.userId, userId),
+              gte(checkins.createdAt, startMonth),
+              lte(checkins.createdAt, endMonth)
+            )
+          ),
+      ]);
 
       return {
         summary: {
