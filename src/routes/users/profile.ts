@@ -23,6 +23,7 @@ export const profileRoute: FastifyPluginAsyncZod = async (server) => {
               phone: z.string().nullable(),
               birthDate: z.string(),
               gender: z.string(),
+              avatar: z.string().nullable(),
             }),
           }),
           401: z.object({ message: z.string() }),
@@ -41,7 +42,7 @@ export const profileRoute: FastifyPluginAsyncZod = async (server) => {
           isActive: users.isActive,
           belt: belts.belt,
           phone: users.phone,
-
+          avatar: users.avatar,
           birthDate: users.birthDate,
           gender: users.gender,
         })

@@ -92,6 +92,13 @@
       "when": 1760311760942,
       "tag": "0012_premium_black_cat",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1761958812320,
+      "tag": "0013_modern_earthquake",
+      "breakpoints": true
     }
   ]
 }

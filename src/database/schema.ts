@@ -45,7 +45,7 @@ export const users = pgTable(
     birthDate: date('birth_date', { mode: 'string' }).notNull(),
     gender: varchar({ length: 6 }).notNull(),
     phone: varchar({ length: 20 }),
-
+    avatar: text(),
 
     isActive: boolean('is_active').notNull().default(false),
     beltId: uuid()

@@ -1,5 +1,8 @@
 import cors from "@fastify/cors";
 import fastify from "fastify";
+import multipart from "@fastify/multipart";
+import { v2 as cloudinary } from 'cloudinary';
+
 import { ZodError } from "zod";
 import { loginRoute } from "./routes/auth/login.ts";
 import { registerRoute } from "./routes/auth/register.ts";
@@ -22,11 +25,24 @@ import { rankingRoute } from "./routes/users/ranking.ts";
 import { upcomingClassesRoute } from "./routes/users/upcoming-classes.ts";
 import { updateProfileRoute } from "./routes/users/update-profile.ts";
 import { summaryRoute } from "./routes/users/summary.ts";
+import { uploadAvatarRoute } from "./routes/users/upload-avatar-profile.ts";
 
 const app = fastify().withTypeProvider<ZodTypeProvider>();
 
 app.register(cors, {
   methods: "*",
+});
+
+app.register(multipart, {
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB
+  },
+})
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
+  api_key: process.env.CLOUDINARY_API_KEY!,
+  api_secret: process.env.CLOUDINARY_API_SECRET!,
 });
 
 app.setValidatorCompiler(validatorCompiler);
@@ -51,6 +67,7 @@ app.register(cancelCheckinRoute);
 
 app.register(getBeltsRoute);
 app.register(rankingRoute);
+app.register(uploadAvatarRoute);
 
 app.setErrorHandler((error, _, reply) => {
   if (error instanceof ZodError) {
