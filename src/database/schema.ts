@@ -14,7 +14,11 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 
-export const userRoleEnum = pgEnum("user_role", ["admin", "student", "instructor"]);
+export const userRoleEnum = pgEnum("user_role", [
+  "admin",
+  "student",
+  "instructor",
+]);
 export const beltEnum = pgEnum("belts_role", [
   "white",
   "blue",
@@ -34,28 +38,25 @@ export const categoryEnum = pgEnum("category_role", [
 
 export const checkinStatus = pgEnum("checkin_status", ["done", "cancelled"]);
 
-export const users = pgTable(
-  "users",
-  {
-    id: uuid().primaryKey().defaultRandom(),
-    name: varchar({ length: 255 }).notNull(),
-    email: varchar({ length: 255 }).notNull().unique(),
-    password: varchar({ length: 255 }).notNull(),
-    role: userRoleEnum().notNull().default("student"),
-    birthDate: date('birth_date', { mode: 'string' }).notNull(),
-    gender: varchar({ length: 6 }).notNull(),
-    phone: varchar({ length: 20 }),
-    avatar: text(),
+export const users = pgTable("users", {
+  id: uuid().primaryKey().defaultRandom(),
+  name: varchar({ length: 255 }).notNull(),
+  email: varchar({ length: 255 }).notNull().unique(),
+  password: varchar({ length: 255 }).notNull(),
+  role: userRoleEnum().notNull().default("student"),
+  birthDate: date("birth_date", { mode: "string" }).notNull(),
+  gender: varchar({ length: 6 }).notNull(),
+  phone: varchar({ length: 20 }),
+  avatar: text(),
 
-    isActive: boolean('is_active').notNull().default(false),
-    beltId: uuid()
-      .notNull()
-      .references(() => belts.id),
+  isActive: boolean("is_active").notNull().default(false),
+  beltId: uuid()
+    .notNull()
+    .references(() => belts.id),
 
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
-  },
-);
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
 
 export const belts = pgTable("belts", {
   id: uuid().primaryKey().defaultRandom(),
@@ -83,10 +84,10 @@ export const classes = pgTable(
     capacity: integer().notNull().default(0),
     // status: statusRole().default("not-started"),
 
-    instructorId: uuid('instructor_id').references(() => users.id),
-    categoryId: uuid('category_id').references(() => categories.id),
+    instructorId: uuid("instructor_id").references(() => users.id),
+    categoryId: uuid("category_id").references(() => categories.id),
 
-    createdAt: timestamp('created_at').defaultNow(),
+    createdAt: timestamp("created_at").defaultNow(),
   },
   (table) => [
     check("capacity_check", sql`${table.capacity} >= 0`),
@@ -104,16 +105,16 @@ export const checkins = pgTable(
   {
     id: uuid().primaryKey().defaultRandom(),
 
-    userId: uuid('user_id')
+    userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    classId: uuid('class_id')
+    classId: uuid("class_id")
       .notNull()
       .references(() => classes.id, { onDelete: "cascade" }),
-    completedAt: timestamp('completed_at').defaultNow(),
+    completedAt: timestamp("completed_at").defaultNow(),
     status: checkinStatus().default("done"),
 
-    createdAt: timestamp('created_at').defaultNow(),
+    createdAt: timestamp("created_at").defaultNow(),
   },
   (table) => [
     uniqueIndex().on(table.userId, table.classId),

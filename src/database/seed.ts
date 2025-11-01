@@ -74,8 +74,7 @@ async function seed() {
 
     const password = await bcrypt.hash("senha123", 10);
 
-    // Criar 1 admin
-    const adminUser = await db
+    await db
       .insert(users)
       .values({
         name: "Admin Sistema",
@@ -86,7 +85,8 @@ async function seed() {
         gender: "male",
         phone: faker.string.numeric({ length: 11 }),
         isActive: true,
-        beltId: createdBelts[4].id, // faixa preta
+        beltId: createdBelts[4].id,
+        avatar: faker.image.avatar(),
       })
       .returning();
 
@@ -113,6 +113,7 @@ async function seed() {
             createdBelts[3].id,
             createdBelts[4].id,
           ]),
+          avatar: faker.image.avatar(),
         })
         .returning();
       instructors.push(instructor[0]);
@@ -143,6 +144,7 @@ async function seed() {
             { weight: 10, value: createdBelts[3].id }, // brown
             { weight: 5, value: createdBelts[4].id }, // black
           ]),
+          avatar: faker.image.avatar(),
         })
         .returning();
       students.push(student[0]);
@@ -233,7 +235,6 @@ async function seed() {
           classId: classItem.id,
           status: faker.helpers.weightedArrayElement([
             { weight: 95, value: "done" as const },
-            { weight: 5, value: "cancelled" as const },
           ]),
           completedAt: new Date(classItem.startTime), // ✅ Isso já está correto
         });
