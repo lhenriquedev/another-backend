@@ -19,6 +19,7 @@ export const rankingRoute: FastifyPluginAsyncZod = async (server) => {
                 userName: z.string(),
                 totalCheckins: z.coerce.number(),
                 position: z.int(),
+                avatar: z.string().nullable(),
               })
             ),
           }),
@@ -33,6 +34,7 @@ export const rankingRoute: FastifyPluginAsyncZod = async (server) => {
           userId: users.id,
           userName: users.name,
           totalCheckins: count(checkins.id).as("total_checkins"),
+          avatar: users.avatar,
         })
         .from(users)
         .leftJoin(checkins, eq(users.id, checkins.userId))

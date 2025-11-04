@@ -45,6 +45,7 @@ export const getClassByIdRoute: FastifyPluginAsyncZod = async (server) => {
           instructorBelt: belts.belt,
           categoryId: categories.id,
           categoryType: categories.type,
+          avatar: users.avatar,
         })
         .from(classes)
         .innerJoin(users, eq(users.id, classes.instructorId))
@@ -71,6 +72,7 @@ export const getClassByIdRoute: FastifyPluginAsyncZod = async (server) => {
           checkinStatus: checkins.status,
           checkinCreatedAt: checkins.createdAt,
           checkinCompletedAt: checkins.completedAt,
+          avatar: users.avatar,
         })
         .from(checkins)
         .innerJoin(users, eq(users.id, checkins.userId))
@@ -83,6 +85,7 @@ export const getClassByIdRoute: FastifyPluginAsyncZod = async (server) => {
         name: student.userName,
         email: student.userEmail,
         belt: student.userBelt,
+        avatar: student.avatar,
         checkin: {
           id: student.checkinId,
           status: student.checkinStatus,
