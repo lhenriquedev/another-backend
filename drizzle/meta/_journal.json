@@ -99,6 +99,13 @@
       "when": 1761958812320,
       "tag": "0013_modern_earthquake",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1762215960129,
+      "tag": "0014_windy_carlie_cooper",
+      "breakpoints": true
     }
   ]
 }

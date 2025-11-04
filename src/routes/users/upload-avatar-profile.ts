@@ -51,6 +51,7 @@ export const uploadAvatarRoute: FastifyPluginAsyncZod = async (server) => {
           .update(users)
           .set({
             avatar: uploadResponse.secure_url,
+            avatarUpdatedAt: new Date(),
             updatedAt: new Date(),
           })
           .where(eq(users.id, user.sub))

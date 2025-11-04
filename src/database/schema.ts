@@ -48,6 +48,7 @@ export const users = pgTable("users", {
   gender: varchar({ length: 6 }).notNull(),
   phone: varchar({ length: 20 }),
   avatar: text(),
+  avatarUpdatedAt: timestamp("avatar_updated_at"),
 
   isActive: boolean("is_active").notNull().default(false),
   beltId: uuid()
