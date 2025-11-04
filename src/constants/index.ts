@@ -1,7 +1,3 @@
-/**
- * Constantes globais da aplicação
- */
-
 export const TIMEZONE = "America/Sao_Paulo";
 
 export const CHECKIN_STATUS = {
