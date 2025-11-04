@@ -86,7 +86,7 @@ async function seed() {
         phone: faker.string.numeric({ length: 11 }),
         isActive: true,
         beltId: createdBelts[4].id,
-        // avatar: faker.image.avatar(),
+        avatar: faker.image.avatar(),
       })
       .returning();
 
@@ -113,7 +113,7 @@ async function seed() {
             createdBelts[3].id,
             createdBelts[4].id,
           ]),
-          // avatar: faker.image.avatar(),
+          avatar: faker.image.avatar(),
         })
         .returning();
       instructors.push(instructor[0]);
@@ -144,7 +144,7 @@ async function seed() {
             { weight: 10, value: createdBelts[3].id }, // brown
             { weight: 5, value: createdBelts[4].id }, // black
           ]),
-          // avatar: faker.image.avatar(),
+          avatar: faker.image.avatar(),
         })
         .returning();
       students.push(student[0]);
