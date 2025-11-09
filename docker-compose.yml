@@ -7,31 +7,16 @@ services:
       POSTGRES_DB: another_backend
     ports:
       - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U root -d another_backend"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  app:
-    build: .
-    ports:
-      - "3333:3333"
-    environment:
-      DATABASE_URL: postgresql://root:root@db:5432/another_backend
-      NODE_ENV: production
-      JWT_SECRET: ${JWT_SECRET}
-      RESEND_API_KEY: ${RESEND_API_KEY}
-      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
-      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
-      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
-      PORT: 3333
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: unless-stopped
-
-volumes:
-  postgres_data:
+  # app:
+  #   build: .
+  #   ports:
+  #     - "3333:3333"
+  #   environment:
+  #     DATABASE_URL: postgresql://root:root@db:5432/another_backend
+  #     NODE_ENV: production
+  #     JWT_SECRET: ${JWT_SECRET}
+  #     RESEND_API_KEY: ${RESEND_API_KEY}
+  #     CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+  #     CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+  #     CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+  #     PORT: 3333

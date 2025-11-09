@@ -1,8 +1,8 @@
-import { and, eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import z from "zod";
 import { db } from "../../database/client.ts";
-import { belts, checkins, users } from "../../database/schema.ts";
+import { belts, users } from "../../database/schema.ts";
 import { checkRequestJWT } from "../../hooks/check-request-jwt.ts";
 import { getAuthenticatedUserFromRequest } from "../../utils/get-authenticated-user-from-request.ts";
 
@@ -21,7 +21,7 @@ export const profileRoute: FastifyPluginAsyncZod = async (server) => {
               isActive: z.boolean(),
               belt: z.string(),
               phone: z.string().nullable(),
-              birthDate: z.string(),
+              birthDate: z.string().nullable(),
               gender: z.string(),
               avatar: z.string().nullable(),
             }),

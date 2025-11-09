@@ -1,16 +1,16 @@
 import { sql } from "drizzle-orm";
 import {
-  uuid,
+  boolean,
+  check,
+  date,
+  index,
+  integer,
+  pgEnum,
   pgTable,
   text,
-  pgEnum,
-  boolean,
   timestamp,
-  integer,
-  date,
   uniqueIndex,
-  check,
-  index,
+  uuid,
   varchar,
 } from "drizzle-orm/pg-core";
 
@@ -44,7 +44,7 @@ export const users = pgTable("users", {
   email: varchar({ length: 255 }).notNull().unique(),
   password: varchar({ length: 255 }).notNull(),
   role: userRoleEnum().notNull().default("student"),
-  birthDate: date("birth_date", { mode: "string" }).notNull(),
+  birthDate: date("birth_date", { mode: "string" }),
   gender: varchar({ length: 6 }).notNull(),
   phone: varchar({ length: 20 }),
   avatar: text(),
